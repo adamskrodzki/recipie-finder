@@ -1,0 +1,9 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- allways follow best practices, keep code modular and maintainable
+- when implementing UI allways do your best to make it look modern and consistent, use molecular design where possible
+
+- for each new task create feature branch, make frequent commits.

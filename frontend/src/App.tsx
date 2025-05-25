@@ -1,15 +1,39 @@
 import { useState } from 'react'
+import { IngredientsInput } from './components/IngredientsInput'
+import { RecipeList } from './components/RecipeList'
+import type { Recipe } from './types/Recipe'
 import './App.css'
 
 function App() {
-  const [ingredients, setIngredients] = useState('')
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [recipes, setRecipes] = useState<string[]>([])
+  const [recipes, setRecipes] = useState<Recipe[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // TODO: Implement recipe search functionality
-    console.log('Searching for recipes with ingredients:', ingredients)
+  const handleIngredientsSubmit = async (ingredients: string[]) => {
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      const response = await fetch('http://localhost:4000/api/recipes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ingredients }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch recipes')
+      }
+
+      const data = await response.json()
+      setRecipes(data.recipes)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+      setRecipes([])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -20,35 +44,27 @@ function App() {
       </header>
       
       <main>
-        <form onSubmit={handleSubmit} className="ingredient-form">
-          <div className="form-group">
-            <label htmlFor="ingredients">
-              Enter your available ingredients (comma-separated):
-            </label>
-            <input
-              type="text"
-              id="ingredients"
-              value={ingredients}
-              onChange={(e) => setIngredients(e.target.value)}
-              placeholder="e.g., chicken, rice, tomatoes"
-              className="ingredient-input"
-            />
-          </div>
-          <button type="submit" className="search-button">
-            Find Recipes
-          </button>
-        </form>
+        <IngredientsInput 
+          onSubmit={handleIngredientsSubmit} 
+          isLoading={isLoading}
+        />
 
-        {recipes.length > 0 && (
-          <div className="recipes-section">
-            <h2>Suggested Recipes</h2>
-            <ul className="recipes-list">
-              {recipes.map((recipe, index) => (
-                <li key={index}>{recipe}</li>
-              ))}
-            </ul>
+        {error && (
+          <div className="error-banner">
+            <p>Error: {error}</p>
+            <button 
+              onClick={() => setError(null)}
+              className="error-dismiss"
+            >
+              Dismiss
+            </button>
           </div>
         )}
+
+        <RecipeList 
+          recipes={recipes} 
+          isLoading={isLoading}
+        />
       </main>
     </div>
   )
