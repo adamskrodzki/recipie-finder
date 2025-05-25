@@ -21,12 +21,13 @@ describe('App Component', () => {
   it('renders the form with correct structure', () => {
     render(<App />);
     
-    // Check if the form element exists by finding it with the new class name
-    const form = document.querySelector('form.ingredients-input');
+    // Check if the form element exists within the ingredients input component
+    const ingredientInput = screen.getByLabelText(/enter your available ingredients/i);
+    const form = ingredientInput.closest('form');
     expect(form).toBeInTheDocument();
+    expect(form).toHaveClass('ingredients-input__form');
     
     // Check if the input field is of type text
-    const ingredientInput = screen.getByLabelText(/enter your available ingredients/i);
     expect(ingredientInput).toHaveAttribute('type', 'text');
     expect(ingredientInput).toHaveAttribute('id', 'ingredients');
   });

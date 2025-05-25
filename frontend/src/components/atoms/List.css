@@ -1,0 +1,42 @@
+.list {
+  margin: 0;
+  padding: 0;
+}
+
+.list--unordered {
+  list-style: none;
+}
+
+.list--ordered {
+  padding-left: 1.5rem;
+}
+
+.list__item {
+  padding: 0.5rem 0;
+  color: #4b5563;
+  line-height: 1.6;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.list__item:last-child {
+  border-bottom: none;
+}
+
+/* Ingredients list styling */
+.list--ingredients .list__item {
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.list--ingredients .list__item:before {
+  content: "•";
+  color: #3b82f6;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}
+
+/* Steps list styling */
+.list--steps .list__item {
+  padding: 0.75rem 0;
+} 

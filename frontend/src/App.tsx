@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { IngredientsInput } from './components/IngredientsInput'
-import { RecipeList } from './components/RecipeList'
+import { IngredientsInput } from './components/organisms/IngredientsInput'
+import { RecipeList } from './components/organisms/RecipeList'
 import type { Recipe } from './types/Recipe'
 import './App.css'
 
@@ -36,36 +36,56 @@ function App() {
     }
   }
 
+  const handleRefine = (recipeId: string) => {
+    console.log('Refine recipe:', recipeId)
+    // TODO: Implement recipe refinement
+  }
+
+  const handleFavorite = (recipeId: string) => {
+    console.log('Toggle favorite:', recipeId)
+    // TODO: Implement favorite toggle
+  }
+
+  const handleRatingChange = (recipeId: string, rating: number) => {
+    console.log('Rate recipe:', recipeId, rating)
+    // TODO: Implement rating change
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>AI-Assisted Recipe Finder</h1>
-        <p>Find delicious recipes based on your available ingredients</p>
-      </header>
-      
-      <main>
-        <IngredientsInput 
-          onSubmit={handleIngredientsSubmit} 
-          isLoading={isLoading}
-        />
+    <div className="app">
+      <div className="app__background">
+        <header className="app__header">
+          <h1 className="app__title">AI-Assisted Recipe Finder</h1>
+          <p className="app__subtitle">Find delicious recipes based on your available ingredients</p>
+        </header>
+        
+        <main className="app__main">
+          <IngredientsInput 
+            onSubmit={handleIngredientsSubmit} 
+            isLoading={isLoading}
+          />
 
-        {error && (
-          <div className="error-banner">
-            <p>Error: {error}</p>
-            <button 
-              onClick={() => setError(null)}
-              className="error-dismiss"
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
+          {error && (
+            <div className="app__error">
+              <p>Error: {error}</p>
+              <button 
+                onClick={() => setError(null)}
+                className="app__error-dismiss"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
 
-        <RecipeList 
-          recipes={recipes} 
-          isLoading={isLoading}
-        />
-      </main>
+          <RecipeList 
+            recipes={recipes} 
+            isLoading={isLoading}
+            onRefine={handleRefine}
+            onFavorite={handleFavorite}
+            onRatingChange={handleRatingChange}
+          />
+        </main>
+      </div>
     </div>
   )
 }

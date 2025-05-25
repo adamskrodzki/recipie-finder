@@ -1,0 +1,52 @@
+.star-rating {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.star {
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease-in-out, transform 0.1s ease-in-out;
+  padding: 0.25rem;
+}
+
+.star--empty {
+  color: #d1d5db;
+}
+
+.star--filled {
+  color: #fbbf24;
+}
+
+.star:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+
+.star:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.star--readonly {
+  cursor: default;
+}
+
+.star--readonly:hover {
+  transform: none;
+}
+
+/* Sizes */
+.star-rating--small .star {
+  font-size: 1rem;
+  padding: 0.125rem;
+}
+
+.star-rating--medium .star {
+  font-size: 1.25rem;
+  padding: 0.25rem;
+}
+
+.star-rating--large .star {
+  font-size: 1.5rem;
+  padding: 0.375rem;
+} 
