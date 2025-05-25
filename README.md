@@ -71,6 +71,8 @@ cd frontend && npm test
   
 - **Frontend Tests**: Component testing using Jest and React Testing Library
   - App component rendering verification
+  - IngredientsInput component functionality and validation
+  - RecipeList component rendering with mock data
   - Form element presence and structure
   - User interface element accessibility
 
@@ -78,7 +80,7 @@ cd frontend && npm test
 
 When running `npm test`, you should see:
 - Backend: 2 tests passing (health endpoint tests)
-- Frontend: 3 tests passing (App component tests)
+- Frontend: 17 tests passing (App, IngredientsInput, and RecipeList component tests)
 - All tests should exit with code 0
 
 ## Project Structure
@@ -87,4 +89,25 @@ When running `npm test`, you should see:
 /SPECIFICATION.md
 /package.json        # root scripts
 /frontend            # Vite + React app
+  /src/components    # React components
+    IngredientsInput.tsx  # Comma-separated ingredient input with validation
+    RecipeList.tsx        # Recipe display with cards, ingredients, and steps
+  /src/types         # TypeScript type definitions
+    Recipe.ts             # Recipe interface and API types
 /backend             # Express + TypeScript API
+
+## Core Components
+
+### IngredientsInput
+- Controlled text input for comma-separated ingredients
+- Real-time validation and parsing
+- Loading states and disabled states during API calls
+- Responsive design with modern styling
+
+### RecipeList
+- Card-based layout for recipe display
+- Shows recipe title, ingredients list, and step-by-step instructions
+- Action buttons for refining and favoriting recipes
+- Star rating system (1-5 stars)
+- Loading spinner during API calls
+- Responsive grid layout
