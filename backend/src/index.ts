@@ -1,67 +1,158 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import { OpenRouterService } from './openrouter'
+import { RecipeRequest } from './types'
 
 dotenv.config()
 const app = express()
 app.use(cors())
 app.use(express.json())
 
+// Initialize OpenRouter service
+const openRouterApiKey = process.env.OPENROUTER_API_KEY
+if (!openRouterApiKey) {
+  console.error('OPENROUTER_API_KEY environment variable is required')
+  process.exit(1)
+}
+const openRouterService = new OpenRouterService(openRouterApiKey)
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })
 })
 
-// Stub endpoint for recipe generation
-app.post('/api/recipes', (req, res) => {
-  const { ingredients } = req.body
-  
-  if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
-    return res.status(400).json({ error: 'Ingredients array is required' })
-  }
-
-  // Generate 3 stub recipes based on ingredients
-  const recipes = [
-    {
-      id: '1',
-      title: `${ingredients[0]} Stir Fry`,
-      ingredients: [...ingredients, 'soy sauce', 'garlic', 'ginger', 'oil'],
-      steps: [
-        'Heat oil in a large pan or wok over medium-high heat',
-        'Add garlic and ginger, stir for 30 seconds until fragrant',
-        `Add ${ingredients[0]} and cook for 3-4 minutes`,
-        'Add remaining ingredients and stir fry for 2-3 minutes',
-        'Season with soy sauce and serve hot'
-      ]
-    },
-    {
-      id: '2',
-      title: `Creamy ${ingredients[0]} Soup`,
-      ingredients: [...ingredients, 'onion', 'garlic', 'cream', 'vegetable broth', 'herbs'],
-      steps: [
-        'Sauté onion and garlic in a large pot until softened',
-        `Add ${ingredients[0]} and cook for 5 minutes`,
-        'Pour in vegetable broth and bring to a boil',
-        'Simmer for 15-20 minutes until tender',
-        'Blend until smooth, stir in cream and herbs',
-        'Season to taste and serve warm'
-      ]
-    },
-    {
-      id: '3',
-      title: `Baked ${ingredients[0]} Casserole`,
-      ingredients: [...ingredients, 'cheese', 'breadcrumbs', 'butter', 'milk', 'seasonings'],
-      steps: [
-        'Preheat oven to 375°F (190°C)',
-        `Layer ${ingredients[0]} in a greased baking dish`,
-        'Mix milk with seasonings and pour over ingredients',
-        'Top with cheese and breadcrumbs',
-        'Dot with butter and bake for 25-30 minutes',
-        'Let cool for 5 minutes before serving'
-      ]
+// Recipe generation endpoint using OpenRouter LLM
+app.post('/api/recipes', async (req, res) => {
+  try {
+    const { ingredients }: RecipeRequest = req.body
+    
+    if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
+      return res.status(400).json({ error: 'Ingredients array is required' })
     }
-  ]
 
-  res.json({ recipes })
+    // Validate ingredients are non-empty strings
+    const validIngredients = ingredients.filter(ingredient => 
+      typeof ingredient === 'string' && ingredient.trim().length > 0
+    )
+
+    if (validIngredients.length === 0) {
+      return res.status(400).json({ error: 'At least one valid ingredient is required' })
+    }
+
+    // Generate recipes using OpenRouter LLM
+    const recipes = await openRouterService.generateRecipes(validIngredients)
+    
+    res.json({ recipes })
+  } catch (error) {
+    console.error('Error generating recipes:', error)
+    
+    // Return appropriate error message
+    const errorMessage = error instanceof Error ? error.message : 'Failed to generate recipes'
+    res.status(500).json({ error: errorMessage })
+  }
+})
+
+// Debug endpoint for testing OpenRouter integration
+app.post('/api/debug/recipes', async (req, res) => {
+  try {
+    const { ingredients }: RecipeRequest = req.body
+    const startTime = Date.now()
+    
+    console.log('=== DEBUG RECIPE GENERATION START ===')
+    console.log('Timestamp:', new Date().toISOString())
+    console.log('Input ingredients:', ingredients)
+    
+    if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
+      const error = 'Ingredients array is required'
+      console.log('Validation error:', error)
+      return res.status(400).json({ 
+        error,
+        debug: {
+          timestamp: new Date().toISOString(),
+          input: ingredients,
+          validationFailed: true
+        }
+      })
+    }
+
+    // Validate ingredients are non-empty strings
+    const validIngredients = ingredients.filter(ingredient => 
+      typeof ingredient === 'string' && ingredient.trim().length > 0
+    )
+    
+    console.log('Valid ingredients after filtering:', validIngredients)
+
+    if (validIngredients.length === 0) {
+      const error = 'At least one valid ingredient is required'
+      console.log('Validation error:', error)
+      return res.status(400).json({ 
+        error,
+        debug: {
+          timestamp: new Date().toISOString(),
+          input: ingredients,
+          filteredIngredients: validIngredients,
+          validationFailed: true
+        }
+      })
+    }
+
+    // Generate recipes using OpenRouter LLM with detailed logging
+    console.log('Calling OpenRouter service...')
+    const recipes = await openRouterService.generateRecipes(validIngredients)
+    
+    const endTime = Date.now()
+    const duration = endTime - startTime
+    
+    console.log('Recipe generation successful!')
+    console.log('Duration:', duration, 'ms')
+    console.log('Generated recipes count:', recipes.length)
+    console.log('Recipe titles:', recipes.map(r => r.title))
+    console.log('=== DEBUG RECIPE GENERATION END ===')
+    
+    res.json({ 
+      recipes,
+      debug: {
+        timestamp: new Date().toISOString(),
+        input: ingredients,
+        filteredIngredients: validIngredients,
+        duration: duration,
+        recipesCount: recipes.length,
+        success: true
+      }
+    })
+  } catch (error) {
+    const endTime = Date.now()
+    const startTime = endTime - (req.body.startTime || 0)
+    
+    console.error('=== DEBUG RECIPE GENERATION ERROR ===')
+    console.error('Timestamp:', new Date().toISOString())
+    console.error('Error details:', error)
+    console.error('Error type:', typeof error)
+    console.error('Error constructor:', error?.constructor?.name)
+    
+    if (error instanceof Error) {
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+    }
+    
+    console.error('Input ingredients:', req.body.ingredients)
+    console.error('=== DEBUG RECIPE GENERATION ERROR END ===')
+    
+    // Return detailed error information
+    const errorMessage = error instanceof Error ? error.message : 'Failed to generate recipes'
+    res.status(500).json({ 
+      error: errorMessage,
+      debug: {
+        timestamp: new Date().toISOString(),
+        input: req.body.ingredients,
+        errorType: typeof error,
+        errorConstructor: error?.constructor?.name,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
+        success: false
+      }
+    })
+  }
 })
 
 const PORT = process.env.PORT || 4000

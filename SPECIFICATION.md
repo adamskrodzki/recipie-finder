@@ -15,6 +15,7 @@ This web app enables users to quickly generate, refine, and save cooking recipes
 ### 3.1 Ingredient Input & Search
 - A form on the home page accepts a comma-separated list or tag inputs of ingredients.
 - On submission, the app calls the AI backend to generate exactly 3 recipes.
+- The backend uses OpenRouter API with GPT-3.5-turbo to generate recipes via structured tool calling.
 
 ### 3.2 Recipe Display
 - Display each recipe in a card:

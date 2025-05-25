@@ -7,3 +7,4 @@ alwaysApply: true
 - when implementing UI allways do your best to make it look modern and consistent, use atomic design where possible
 
 - for each new task create feature branch, make frequent commits.
+- dont be lazy, never ask me to run/test something you can do yourself with tool calling

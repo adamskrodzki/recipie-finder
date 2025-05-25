@@ -14,12 +14,28 @@ Built with React + TypeScript on the frontend, Node + TypeScript + Express on th
 ## Tech Stack
 - Frontend: Vite + React + TypeScript
 - Backend: Express + TypeScript
-- AI Integration: OpenRouter API
+- AI Integration: OpenRouter API with GPT-3.5-turbo
 - Storage: browser localStorage for favorites & ratings
+
+## AI Integration Details
+The backend integrates with OpenRouter to generate recipes using advanced prompting techniques:
+
+- **System Prompts**: Establishes the AI as an expert chef with clear guidelines
+- **Few-Shot Prompting**: Includes example request/response pairs to improve output quality
+- **Tool Calling**: Uses OpenRouter's structured output feature to ensure consistent JSON responses
+- **Error Handling**: Comprehensive validation and error handling for API failures
+
+The AI generates exactly 3 diverse recipes using the provided ingredients, with each recipe including:
+- Creative recipe titles
+- Complete ingredient lists (including additional pantry staples)
+- Step-by-step cooking instructions
+- Diverse cooking methods and cuisines
 
 ## Prerequisites
 - Node.js v18+  
 - An OpenRouter API key (set in `backend/.env`)
+  - Sign up at [OpenRouter](https://openrouter.ai/) to get your API key
+  - The app uses GPT-3.5-turbo via OpenRouter for recipe generation
 
 ## Getting Started
 
@@ -36,7 +52,10 @@ Built with React + TypeScript on the frontend, Node + TypeScript + Express on th
 
 3. Create your environment file
     In backend/.env:
+    ```
     OPENROUTER_API_KEY=your_api_key_here
+    PORT=4000
+    ```
 
 4. Run in development mode
     
