@@ -20,8 +20,11 @@
   "homepage": "https://github.com/adamskrodzki/recipie-finder#readme",
   "devDependencies": {
     "@types/express": "^5.0.2",
+    "@types/jest": "^29.5.14",
     "@types/node": "^22.15.21",
     "concurrently": "^9.1.2",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.3.4",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.3"
   },
