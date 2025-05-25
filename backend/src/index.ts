@@ -2,7 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import { OpenRouterService } from './openrouter'
-import { RecipeRequest } from './types'
+import { RecipeRequest, RecipeRefinementRequest } from './types'
 
 dotenv.config()
 const app = express()
@@ -48,6 +48,41 @@ app.post('/api/recipes', async (req, res) => {
     
     // Return appropriate error message
     const errorMessage = error instanceof Error ? error.message : 'Failed to generate recipes'
+    res.status(500).json({ error: errorMessage })
+  }
+})
+
+// Recipe refinement endpoint using OpenRouter LLM
+app.post('/api/recipes/refine', async (req, res) => {
+  try {
+    const { recipe, instruction }: RecipeRefinementRequest = req.body
+    
+    if (!recipe || typeof recipe !== 'object') {
+      return res.status(400).json({ error: 'Recipe object is required' })
+    }
+
+    if (!instruction || typeof instruction !== 'string' || instruction.trim().length === 0) {
+      return res.status(400).json({ error: 'Refinement instruction is required' })
+    }
+
+    // Validate recipe structure
+    if (!recipe.id || !recipe.title || !Array.isArray(recipe.ingredients) || !Array.isArray(recipe.steps)) {
+      return res.status(400).json({ error: 'Invalid recipe structure' })
+    }
+
+    if (recipe.ingredients.length === 0 || recipe.steps.length === 0) {
+      return res.status(400).json({ error: 'Recipe must have ingredients and steps' })
+    }
+
+    // Refine recipe using OpenRouter LLM
+    const refinedRecipe = await openRouterService.refineRecipe(recipe, instruction.trim())
+    
+    res.json({ refinedRecipe })
+  } catch (error) {
+    console.error('Error refining recipe:', error)
+    
+    // Return appropriate error message
+    const errorMessage = error instanceof Error ? error.message : 'Failed to refine recipe'
     res.status(500).json({ error: errorMessage })
   }
 })

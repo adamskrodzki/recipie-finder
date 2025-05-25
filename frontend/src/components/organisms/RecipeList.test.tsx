@@ -19,6 +19,14 @@ const mockRecipes: Recipe[] = [
     rating: 5,
     isFavorite: true,
   },
+  {
+    id: '3',
+    title: 'Vegetable Soup',
+    ingredients: ['vegetables', 'broth', 'herbs'],
+    steps: ['Chop vegetables', 'Simmer in broth', 'Season'],
+    rating: 3,
+    isFavorite: false,
+  },
 ];
 
 describe('RecipeList', () => {
@@ -34,70 +42,149 @@ describe('RecipeList', () => {
     expect(screen.getByRole('status', { name: /loading recipes/i })).toBeInTheDocument();
   });
 
-  it('renders recipes when provided', () => {
+  it('renders first recipe by default in carousel', () => {
     render(<RecipeList recipes={mockRecipes} />);
     
     expect(screen.getByText('Suggested Recipes')).toBeInTheDocument();
+    expect(screen.getByText('1 of 3')).toBeInTheDocument();
     expect(screen.getByText('Chicken Stir Fry')).toBeInTheDocument();
-    expect(screen.getByText('Pasta Carbonara')).toBeInTheDocument();
+    expect(screen.queryByText('Pasta Carbonara')).not.toBeInTheDocument();
   });
 
-  it('renders correct number of recipe cards', () => {
+  it('shows navigation arrows when multiple recipes', () => {
     render(<RecipeList recipes={mockRecipes} />);
     
-    const recipeCards = screen.getAllByText(/Ingredients/);
-    expect(recipeCards).toHaveLength(2);
+    expect(screen.getByRole('button', { name: /previous recipe/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /next recipe/i })).toBeInTheDocument();
   });
 
-  it('handles refine action', () => {
+  it('does not show navigation arrows for single recipe', () => {
+    render(<RecipeList recipes={[mockRecipes[0]]} />);
+    
+    expect(screen.queryByRole('button', { name: /previous recipe/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /next recipe/i })).not.toBeInTheDocument();
+  });
+
+  it('shows indicators when multiple recipes', () => {
+    render(<RecipeList recipes={mockRecipes} />);
+    
+    const indicators = screen.getAllByRole('button').filter(button => 
+      button.getAttribute('aria-label')?.includes('Go to recipe')
+    );
+    expect(indicators).toHaveLength(3);
+  });
+
+  it('does not show indicators for single recipe', () => {
+    render(<RecipeList recipes={[mockRecipes[0]]} />);
+    
+    const indicators = screen.queryAllByRole('button').filter(button => 
+      button.getAttribute('aria-label')?.includes('Go to recipe')
+    );
+    expect(indicators).toHaveLength(0);
+  });
+
+  it('navigates to next recipe when next button clicked', () => {
+    render(<RecipeList recipes={mockRecipes} />);
+    
+    const nextButton = screen.getByRole('button', { name: /next recipe/i });
+    fireEvent.click(nextButton);
+    
+    expect(screen.getByText('2 of 3')).toBeInTheDocument();
+    expect(screen.getByText('Pasta Carbonara')).toBeInTheDocument();
+    expect(screen.queryByText('Chicken Stir Fry')).not.toBeInTheDocument();
+  });
+
+  it('navigates to previous recipe when previous button clicked', () => {
+    render(<RecipeList recipes={mockRecipes} />);
+    
+    // First go to next recipe
+    const nextButton = screen.getByRole('button', { name: /next recipe/i });
+    fireEvent.click(nextButton);
+    
+    // Then go back to previous
+    const prevButton = screen.getByRole('button', { name: /previous recipe/i });
+    fireEvent.click(prevButton);
+    
+    expect(screen.getByText('1 of 3')).toBeInTheDocument();
+    expect(screen.getByText('Chicken Stir Fry')).toBeInTheDocument();
+  });
+
+  it('wraps around when navigating past last recipe', () => {
+    render(<RecipeList recipes={mockRecipes} />);
+    
+    const nextButton = screen.getByRole('button', { name: /next recipe/i });
+    
+    // Click next twice to get to last recipe
+    fireEvent.click(nextButton);
+    fireEvent.click(nextButton);
+    expect(screen.getByText('3 of 3')).toBeInTheDocument();
+    
+    // Click next again to wrap to first
+    fireEvent.click(nextButton);
+    expect(screen.getByText('1 of 3')).toBeInTheDocument();
+    expect(screen.getByText('Chicken Stir Fry')).toBeInTheDocument();
+  });
+
+  it('wraps around when navigating before first recipe', () => {
+    render(<RecipeList recipes={mockRecipes} />);
+    
+    const prevButton = screen.getByRole('button', { name: /previous recipe/i });
+    fireEvent.click(prevButton);
+    
+    expect(screen.getByText('3 of 3')).toBeInTheDocument();
+    expect(screen.getByText('Vegetable Soup')).toBeInTheDocument();
+  });
+
+  it('navigates to specific recipe when indicator clicked', () => {
+    render(<RecipeList recipes={mockRecipes} />);
+    
+    const indicators = screen.getAllByRole('button').filter(button => 
+      button.getAttribute('aria-label')?.includes('Go to recipe')
+    );
+    
+    fireEvent.click(indicators[2]); // Click third indicator
+    
+    expect(screen.getByText('3 of 3')).toBeInTheDocument();
+    expect(screen.getByText('Vegetable Soup')).toBeInTheDocument();
+  });
+
+  it('handles refine action for current recipe', () => {
     const handleRefine = jest.fn();
     render(<RecipeList recipes={mockRecipes} onRefine={handleRefine} />);
     
-    const refineButtons = screen.getAllByText('Refine Recipe');
-    fireEvent.click(refineButtons[0]);
+    const refineButton = screen.getByText('Refine Recipe');
+    fireEvent.click(refineButton);
     
     expect(handleRefine).toHaveBeenCalledWith('1');
   });
 
-  it('handles favorite action', () => {
+  it('handles favorite action for current recipe', () => {
     const handleFavorite = jest.fn();
     render(<RecipeList recipes={mockRecipes} onFavorite={handleFavorite} />);
     
-    const favoriteButtons = screen.getAllByText(/Favorite/);
-    fireEvent.click(favoriteButtons[0]);
+    const favoriteButton = screen.getByText(/Favorite/);
+    fireEvent.click(favoriteButton);
     
     expect(handleFavorite).toHaveBeenCalledWith('1');
   });
 
-  it('handles rating change', () => {
+  it('handles rating change for current recipe', () => {
     const handleRatingChange = jest.fn();
     render(<RecipeList recipes={mockRecipes} onRatingChange={handleRatingChange} />);
     
-    // Get all star buttons and click the first 5-star rating (from first recipe)
-    const allStars = screen.getAllByRole('button').filter(button => 
+    const stars = screen.getAllByRole('button').filter(button => 
       button.getAttribute('aria-label')?.includes('Rate')
     );
     
-    // Click the 5th star of the first recipe (first 5 stars belong to first recipe)
-    fireEvent.click(allStars[4]);
+    fireEvent.click(stars[4]); // Click 5th star
     
     expect(handleRatingChange).toHaveBeenCalledWith('1', 5);
   });
 
-  it('displays recipes in grid layout', () => {
-    render(<RecipeList recipes={mockRecipes} />);
+  it('shows correct counter for single recipe', () => {
+    render(<RecipeList recipes={[mockRecipes[0]]} />);
     
-    const grid = screen.getByText('Chicken Stir Fry').closest('.recipe-list__grid');
-    expect(grid).toBeInTheDocument();
-    expect(grid).toHaveClass('recipe-list__grid');
-  });
-
-  it('shows title when recipes are present', () => {
-    render(<RecipeList recipes={mockRecipes} />);
-    
-    const title = screen.getByText('Suggested Recipes');
-    expect(title).toBeInTheDocument();
-    expect(title).toHaveClass('recipe-list__title');
+    expect(screen.getByText('1 of 1')).toBeInTheDocument();
   });
 
   it('renders within container with proper styling', () => {
@@ -108,30 +195,6 @@ describe('RecipeList', () => {
     expect(container).toHaveClass('recipe-list-container');
   });
 
-  it('passes all props to recipe cards correctly', () => {
-    const handleRefine = jest.fn();
-    const handleFavorite = jest.fn();
-    const handleRatingChange = jest.fn();
-    
-    render(
-      <RecipeList 
-        recipes={mockRecipes}
-        onRefine={handleRefine}
-        onFavorite={handleFavorite}
-        onRatingChange={handleRatingChange}
-      />
-    );
-    
-    // Verify that all recipe information is displayed
-    expect(screen.getByText('Chicken Stir Fry')).toBeInTheDocument();
-    expect(screen.getByText('Pasta Carbonara')).toBeInTheDocument();
-    
-    // Verify that actions work
-    const refineButtons = screen.getAllByText('Refine Recipe');
-    fireEvent.click(refineButtons[1]); // Click second recipe's refine button
-    expect(handleRefine).toHaveBeenCalledWith('2');
-  });
-
   it('shows loading spinner with proper accessibility', () => {
     render(<RecipeList recipes={[]} isLoading />);
     
@@ -140,11 +203,25 @@ describe('RecipeList', () => {
     expect(spinner).toHaveClass('recipe-list__spinner');
   });
 
-  it('handles single recipe correctly', () => {
-    render(<RecipeList recipes={[mockRecipes[0]]} />);
+  it('maintains recipe state when navigating', () => {
+    const handleRatingChange = jest.fn();
+    render(<RecipeList recipes={mockRecipes} onRatingChange={handleRatingChange} />);
     
-    expect(screen.getByText('Suggested Recipes')).toBeInTheDocument();
+    // Rate first recipe
+    const stars = screen.getAllByRole('button').filter(button => 
+      button.getAttribute('aria-label')?.includes('Rate')
+    );
+    fireEvent.click(stars[2]); // Click 3rd star
+    
+    // Navigate to next recipe and back
+    const nextButton = screen.getByRole('button', { name: /next recipe/i });
+    fireEvent.click(nextButton);
+    
+    const prevButton = screen.getByRole('button', { name: /previous recipe/i });
+    fireEvent.click(prevButton);
+    
+    // Verify we're back to first recipe
     expect(screen.getByText('Chicken Stir Fry')).toBeInTheDocument();
-    expect(screen.queryByText('Pasta Carbonara')).not.toBeInTheDocument();
+    expect(handleRatingChange).toHaveBeenCalledWith('1', 3);
   });
 }); 

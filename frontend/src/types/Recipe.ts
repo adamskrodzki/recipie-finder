@@ -13,4 +13,13 @@ export interface RecipeRequest {
 
 export interface RecipeResponse {
   recipes: Recipe[];
+}
+
+export interface RecipeRefinementRequest {
+  recipe: Recipe;
+  instruction: string;
+}
+
+export interface RecipeRefinementResponse {
+  refinedRecipe: Recipe;
 } 

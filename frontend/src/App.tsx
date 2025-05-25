@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { IngredientsInput } from './components/organisms/IngredientsInput'
 import { RecipeList } from './components/organisms/RecipeList'
+import { RecipeRefinementModal } from './components/organisms/RecipeRefinementModal'
 import type { Recipe } from './types/Recipe'
 import './App.css'
 
@@ -8,6 +9,15 @@ function App() {
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [refinementModal, setRefinementModal] = useState<{
+    isOpen: boolean;
+    recipe: Recipe | null;
+    isLoading: boolean;
+  }>({
+    isOpen: false,
+    recipe: null,
+    isLoading: false
+  })
 
   const handleIngredientsSubmit = async (ingredients: string[]) => {
     setIsLoading(true)
@@ -37,18 +47,72 @@ function App() {
   }
 
   const handleRefine = (recipeId: string) => {
-    console.log('Refine recipe:', recipeId)
-    // TODO: Implement recipe refinement
+    const recipe = recipes.find(r => r.id === recipeId)
+    if (recipe) {
+      setRefinementModal({
+        isOpen: true,
+        recipe,
+        isLoading: false
+      })
+    }
+  }
+
+  const handleRefinementSubmit = async (recipe: Recipe, instruction: string) => {
+    setRefinementModal(prev => ({ ...prev, isLoading: true }))
+    
+    try {
+      const response = await fetch('http://localhost:4000/api/recipes/refine', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ recipe, instruction }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to refine recipe')
+      }
+
+      const data = await response.json()
+      
+      // Update the recipe in the list
+      setRecipes(prevRecipes => 
+        prevRecipes.map(r => 
+          r.id === recipe.id ? { ...data.refinedRecipe, rating: r.rating, isFavorite: r.isFavorite } : r
+        )
+      )
+    } finally {
+      setRefinementModal(prev => ({ ...prev, isLoading: false }))
+    }
+  }
+
+  const handleRefinementModalClose = () => {
+    setRefinementModal({
+      isOpen: false,
+      recipe: null,
+      isLoading: false
+    })
   }
 
   const handleFavorite = (recipeId: string) => {
-    console.log('Toggle favorite:', recipeId)
-    // TODO: Implement favorite toggle
+    setRecipes(prevRecipes =>
+      prevRecipes.map(recipe =>
+        recipe.id === recipeId
+          ? { ...recipe, isFavorite: !recipe.isFavorite }
+          : recipe
+      )
+    )
   }
 
   const handleRatingChange = (recipeId: string, rating: number) => {
-    console.log('Rate recipe:', recipeId, rating)
-    // TODO: Implement rating change
+    setRecipes(prevRecipes =>
+      prevRecipes.map(recipe =>
+        recipe.id === recipeId
+          ? { ...recipe, rating }
+          : recipe
+      )
+    )
   }
 
   return (
@@ -63,6 +127,7 @@ function App() {
           <IngredientsInput 
             onSubmit={handleIngredientsSubmit} 
             isLoading={isLoading}
+            hasRecipes={recipes.length > 0}
           />
 
           {error && (
@@ -86,6 +151,14 @@ function App() {
           />
         </main>
       </div>
+
+      <RecipeRefinementModal
+        isOpen={refinementModal.isOpen}
+        onClose={handleRefinementModalClose}
+        recipe={refinementModal.recipe}
+        onRefine={handleRefinementSubmit}
+        isLoading={refinementModal.isLoading}
+      />
     </div>
   )
 }

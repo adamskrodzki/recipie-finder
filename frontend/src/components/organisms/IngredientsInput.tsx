@@ -7,13 +7,19 @@ import './IngredientsInput.css';
 interface IngredientsInputProps {
   onSubmit: (ingredients: string[]) => void;
   isLoading?: boolean;
+  hasRecipes?: boolean;
 }
 
 export const IngredientsInput: React.FC<IngredientsInputProps> = ({ 
   onSubmit, 
-  isLoading = false 
+  isLoading = false,
+  hasRecipes = false
 }) => {
   const [ingredients, setIngredients] = useState('');
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Auto-collapse when recipes are loaded
+  const shouldCollapse = hasRecipes && !isLoading;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,31 +43,75 @@ export const IngredientsInput: React.FC<IngredientsInputProps> = ({
     setIngredients(e.target.value);
   };
 
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
+  const handleNewSearch = () => {
+    setIngredients('');
+    setIsCollapsed(false);
+  };
+
   return (
-    <Card className="ingredients-input">
-      <CardContent>
-        <form onSubmit={handleSubmit} className="ingredients-input__form">
-          <FormField
-            id="ingredients"
-            label="Enter your available ingredients (comma-separated):"
-            value={ingredients}
-            onChange={handleInputChange}
-            placeholder="e.g., chicken, rice, tomatoes, onions"
-            disabled={isLoading}
-            required
-          />
-          
-          <Button 
-            type="submit" 
-            variant="primary"
-            size="large"
-            disabled={isLoading || !ingredients.trim()}
-            className="ingredients-input__submit"
+    <div className={`ingredients-input-container ${shouldCollapse ? 'ingredients-input-container--collapsible' : ''}`}>
+      {shouldCollapse && (
+        <div className="ingredients-input__header">
+          <button
+            className="ingredients-input__toggle"
+            onClick={toggleCollapse}
+            aria-label={isCollapsed ? 'Expand ingredients input' : 'Collapse ingredients input'}
           >
-            {isLoading ? 'Finding Recipes...' : 'Find Recipes'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+            <span className="ingredients-input__toggle-icon">
+              {isCollapsed ? '▼' : '▲'}
+            </span>
+            <span className="ingredients-input__toggle-text">
+              {isCollapsed ? 'Search New Recipes' : 'Hide Search'}
+            </span>
+          </button>
+        </div>
+      )}
+
+      <div className={`ingredients-input__content ${shouldCollapse && isCollapsed ? 'ingredients-input__content--collapsed' : ''}`}>
+        <Card className="ingredients-input">
+          <CardContent>
+            <form onSubmit={handleSubmit} className="ingredients-input__form">
+              <FormField
+                id="ingredients"
+                label="Enter your available ingredients (comma-separated):"
+                value={ingredients}
+                onChange={handleInputChange}
+                placeholder="e.g., chicken, rice, tomatoes, onions"
+                disabled={isLoading}
+                required
+              />
+              
+              <div className="ingredients-input__actions">
+                <Button 
+                  type="submit" 
+                  variant="primary"
+                  size="large"
+                  disabled={isLoading || !ingredients.trim()}
+                  className="ingredients-input__submit"
+                >
+                  {isLoading ? 'Finding Recipes...' : 'Find Recipes'}
+                </Button>
+                
+                {shouldCollapse && ingredients && (
+                  <Button 
+                    type="button" 
+                    variant="secondary"
+                    size="large"
+                    onClick={handleNewSearch}
+                    className="ingredients-input__clear"
+                  >
+                    Clear & Start Over
+                  </Button>
+                )}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }; 

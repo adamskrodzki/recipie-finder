@@ -1,20 +1,116 @@
+.ingredients-input-container {
+  max-width: 800px;
+  margin: 0 auto 2rem;
+  transition: all 0.3s ease-in-out;
+}
+
+.ingredients-input-container--collapsible {
+  margin-bottom: 1rem;
+}
+
+.ingredients-input__header {
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.ingredients-input__toggle {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 8px rgba(107, 114, 128, 0.3);
+}
+
+.ingredients-input__toggle:hover {
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
+}
+
+.ingredients-input__toggle-icon {
+  font-size: 0.75rem;
+  transition: transform 0.2s ease-in-out;
+}
+
+.ingredients-input__toggle-text {
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.ingredients-input__content {
+  overflow: hidden;
+  transition: all 0.3s ease-in-out;
+  max-height: 500px;
+  opacity: 1;
+}
+
+.ingredients-input__content--collapsed {
+  max-height: 0;
+  opacity: 0;
+  margin: 0;
+}
+
 .ingredients-input {
-  max-width: 600px;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .ingredients-input__form {
   display: flex;
   flex-direction: column;
+  gap: 1.5rem;
 }
 
-.ingredients-input__submit {
-  width: 100%;
-  margin-top: 0.5rem;
+.ingredients-input__actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-@media (max-width: 640px) {
-  .ingredients-input {
-    margin: 1rem;
+.ingredients-input__submit,
+.ingredients-input__clear {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .ingredients-input-container {
+    margin: 0 auto 1.5rem;
+  }
+  
+  .ingredients-input__actions {
+    flex-direction: column;
+  }
+  
+  .ingredients-input__submit,
+  .ingredients-input__clear {
+    flex: none;
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .ingredients-input__toggle {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.8125rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .ingredients-input__toggle {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+  }
+  
+  .ingredients-input__form {
+    gap: 1.25rem;
   }
 } 

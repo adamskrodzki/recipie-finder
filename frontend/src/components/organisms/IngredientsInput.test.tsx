@@ -125,4 +125,46 @@ describe('IngredientsInput', () => {
     expect(card).toBeInTheDocument();
     expect(card).toHaveClass('ingredients-input');
   });
+
+  it('shows toggle button when hasRecipes is true', () => {
+    render(<IngredientsInput onSubmit={() => {}} hasRecipes />);
+    
+    expect(screen.getByText('Hide Search')).toBeInTheDocument();
+  });
+
+  it('does not show toggle button when hasRecipes is false', () => {
+    render(<IngredientsInput onSubmit={() => {}} hasRecipes={false} />);
+    
+    expect(screen.queryByText('Hide Search')).not.toBeInTheDocument();
+  });
+
+  it('toggles collapse state when toggle button is clicked', () => {
+    render(<IngredientsInput onSubmit={() => {}} hasRecipes />);
+    
+    const toggleButton = screen.getByText('Hide Search').closest('button')!;
+    fireEvent.click(toggleButton);
+    
+    expect(screen.getByText('Search New Recipes')).toBeInTheDocument();
+  });
+
+  it('shows clear button when hasRecipes is true and input has content', () => {
+    render(<IngredientsInput onSubmit={() => {}} hasRecipes />);
+    
+    const input = screen.getByLabelText(/enter your available ingredients/i);
+    fireEvent.change(input, { target: { value: 'chicken' } });
+    
+    expect(screen.getByText('Clear & Start Over')).toBeInTheDocument();
+  });
+
+  it('clears input when clear button is clicked', () => {
+    render(<IngredientsInput onSubmit={() => {}} hasRecipes />);
+    
+    const input = screen.getByLabelText(/enter your available ingredients/i);
+    fireEvent.change(input, { target: { value: 'chicken' } });
+    
+    const clearButton = screen.getByRole('button', { name: /clear & start over/i });
+    fireEvent.click(clearButton);
+    
+    expect(input).toHaveValue('');
+  });
 }); 
