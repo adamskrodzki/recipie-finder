@@ -11,6 +11,11 @@ app.get('/api/health', (_, res) => {
   res.json({ status: 'ok' })
 })
 
-app.listen(4000, () => {
-  console.log('Backend listening on http://localhost:4000')
-})
+// Only start the server if this file is run directly
+if (require.main === module) {
+  app.listen(4000, () => {
+    console.log('Backend listening on http://localhost:4000')
+  })
+}
+
+export default app;
