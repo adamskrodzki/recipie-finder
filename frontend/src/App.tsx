@@ -1,34 +1,56 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [ingredients, setIngredients] = useState('')
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [recipes, setRecipes] = useState<string[]>([])
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // TODO: Implement recipe search functionality
+    console.log('Searching for recipes with ingredients:', ingredients)
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div className="App">
+      <header className="App-header">
+        <h1>AI-Assisted Recipe Finder</h1>
+        <p>Find delicious recipes based on your available ingredients</p>
+      </header>
+      
+      <main>
+        <form onSubmit={handleSubmit} className="ingredient-form">
+          <div className="form-group">
+            <label htmlFor="ingredients">
+              Enter your available ingredients (comma-separated):
+            </label>
+            <input
+              type="text"
+              id="ingredients"
+              value={ingredients}
+              onChange={(e) => setIngredients(e.target.value)}
+              placeholder="e.g., chicken, rice, tomatoes"
+              className="ingredient-input"
+            />
+          </div>
+          <button type="submit" className="search-button">
+            Find Recipes
+          </button>
+        </form>
+
+        {recipes.length > 0 && (
+          <div className="recipes-section">
+            <h2>Suggested Recipes</h2>
+            <ul className="recipes-list">
+              {recipes.map((recipe, index) => (
+                <li key={index}>{recipe}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </main>
+    </div>
   )
 }
 
