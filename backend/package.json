@@ -4,7 +4,8 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "ts-node-dev --respawn src/index.ts",
-    "test": "jest"
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "cors": "^2.8.5",
