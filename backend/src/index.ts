@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express'
+import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 
@@ -7,12 +7,12 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-app.get('/api/health', (_, res) => {
+app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })
 })
 
 // Stub endpoint for recipe generation
-app.post('/api/recipes', (req: Request, res: Response) => {
+app.post('/api/recipes', (req, res) => {
   const { ingredients } = req.body
   
   if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
@@ -64,6 +64,7 @@ app.post('/api/recipes', (req: Request, res: Response) => {
   res.json({ recipes })
 })
 
-app.listen(4000, () => {
-  console.log('Backend listening on http://localhost:4000')
+const PORT = process.env.PORT || 4000
+app.listen(PORT, () => {
+  console.log(`Backend listening on http://localhost:${PORT}`)
 })
