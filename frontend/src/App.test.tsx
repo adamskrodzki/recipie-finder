@@ -12,7 +12,7 @@ describe('App Component', () => {
     expect(screen.getByLabelText(/enter your available ingredients/i)).toBeInTheDocument();
     
     // Check if the input has the correct placeholder
-    expect(screen.getByPlaceholderText(/chicken, rice, tomatoes/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/chicken, rice, tomatoes, onions/i)).toBeInTheDocument();
     
     // Check if the submit button is present
     expect(screen.getByRole('button', { name: /find recipes/i })).toBeInTheDocument();
@@ -21,8 +21,8 @@ describe('App Component', () => {
   it('renders the form with correct structure', () => {
     render(<App />);
     
-    // Check if the form element exists by finding it with a more specific selector
-    const form = document.querySelector('form.ingredient-form');
+    // Check if the form element exists by finding it with the new class name
+    const form = document.querySelector('form.ingredients-input');
     expect(form).toBeInTheDocument();
     
     // Check if the input field is of type text

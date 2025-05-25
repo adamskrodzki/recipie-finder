@@ -56,7 +56,7 @@ describe('RecipeList', () => {
     
     // Check for specific ingredients
     expect(screen.getByText('chicken')).toBeInTheDocument();
-    expect(screen.getByText('vegetables')).toBeInTheDocument();
+    expect(screen.getAllByText('vegetables')).toHaveLength(2); // appears in both recipes
     
     // Check for specific steps
     expect(screen.getByText('Heat oil in a pan')).toBeInTheDocument();
@@ -86,7 +86,7 @@ describe('RecipeList', () => {
   test('renders ingredients as list items', () => {
     render(<RecipeList recipes={[mockRecipes[0]]} />);
     
-    const ingredientsList = screen.getByRole('list');
+    const ingredientsList = screen.getAllByRole('list')[0]; // Get the first list (ingredients)
     expect(ingredientsList).toBeInTheDocument();
     
     // Check that all ingredients are rendered
