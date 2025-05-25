@@ -41,3 +41,50 @@ This web app enables users to quickly generate, refine, and save cooking recipes
 - While awaiting AI responses, show a spinner or skeleton UI.
 - On network or AI errors, display a user-friendly error banner with retry option.
 
+## API Endpoints
+
+### POST /api/recipes
+Accepts: `application/json`
+
+Request body:
+```json
+{
+  "ingredients": ["carrot", "pasta"]
+}
+```
+
+Response (200 OK):
+```json
+{
+  "recipes": [
+    {
+      "title": "Simple Veggie Stir Fry",
+      "ingredients": ["broccoli", "carrot", "soy sauce", "garlic"],
+      "steps": [
+        "Chop all vegetables.",
+        "Heat oil in a pan and add garlic.",
+        "Add vegetables and stir fry for 5-7 minutes.",
+        "Add soy sauce and cook for another 2 minutes."
+      ]
+    },
+    {
+      "title": "Pasta Primavera",
+      "ingredients": ["pasta", "bell pepper", "zucchini", "olive oil", "parmesan"],
+      "steps": [
+        "Cook pasta according to package instructions.",
+        "Sauté bell pepper and zucchini in olive oil.",
+        "Combine cooked pasta with vegetables.",
+        "Top with parmesan and serve."
+      ]
+    }
+  ]
+}
+```
+
+Error (400):
+```json
+{
+  "error": "ingredients must be an array of strings"
+}
+```
+
