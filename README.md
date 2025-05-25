@@ -42,6 +42,33 @@ Built with React + TypeScript on the frontend, Node + TypeScript + Express on th
     
     npm run dev
 
+## Testing
+
+Automated tests are set up for both backend and frontend using Jest.
+
+### Run all tests (from root)
+```bash
+npm test
+```
+
+### Run backend tests
+```bash
+cd backend && npm test
+```
+
+- Runs all tests in `backend/tests/`
+- Example: checks `/api/health` endpoint returns `{ status: 'ok' }`
+
+### Run frontend tests
+```bash
+cd frontend && npm test
+```
+
+- Runs all React component tests (e.g. `src/App.test.tsx`)
+- Example: checks the home page renders the heading and counter button
+
+All tests should exit with code 0 if successful.
+
 ## Project Structure
 
 /README.md
