@@ -6,7 +6,8 @@
   ],
   "compilerOptions": {
     "jsx": "react-jsx",
-    "types": ["jest", "node"]
+    "types": ["jest", "node"],
+    "esModuleInterop": true
   },
   "include": ["src", "src/svg.d.ts"]
 }

@@ -52,3 +52,10 @@ export default tseslint.config({
   },
 })
 ```
+
+## Features
+
+- **IngredientsInput component**: Controlled text input and submit button for entering comma-separated ingredients.
+- **RecipeList component**: Displays a list of recipes, each with a title and step-by-step instructions.
+- Home page integrates both components: users enter ingredients, click "Find Recipes", and see recipe results fetched from the backend.
+- Unit tests for both components ensure correct rendering and behavior.
