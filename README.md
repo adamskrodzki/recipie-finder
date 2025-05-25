@@ -42,6 +42,45 @@ Built with React + TypeScript on the frontend, Node + TypeScript + Express on th
     
     npm run dev
 
+## Testing
+
+This project includes comprehensive automated tests for both frontend and backend components.
+
+### Running Tests
+
+Run all tests (backend + frontend):
+```bash
+npm test
+```
+
+Run backend tests only:
+```bash
+cd backend && npm test
+```
+
+Run frontend tests only:
+```bash
+cd frontend && npm test
+```
+
+### Test Coverage
+
+- **Backend Tests**: API endpoint testing using Jest and Supertest
+  - Health endpoint verification (`/api/health`)
+  - Response format and status code validation
+  
+- **Frontend Tests**: Component testing using Jest and React Testing Library
+  - App component rendering verification
+  - Form element presence and structure
+  - User interface element accessibility
+
+### Expected Output
+
+When running `npm test`, you should see:
+- Backend: 2 tests passing (health endpoint tests)
+- Frontend: 3 tests passing (App component tests)
+- All tests should exit with code 0
+
 ## Project Structure
 
 /README.md
