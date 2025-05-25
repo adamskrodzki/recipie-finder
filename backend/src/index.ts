@@ -12,7 +12,7 @@ app.get('/api/health', (_, res) => {
 })
 
 // Only start the server if this file is run directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   app.listen(4000, () => {
     console.log('Backend listening on http://localhost:4000')
   })
