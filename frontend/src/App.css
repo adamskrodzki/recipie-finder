@@ -20,6 +20,7 @@ body {
 
 .app__background {
   min-height: 100vh;
+  min-width: 100vw;
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 2rem;
