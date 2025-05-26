@@ -12,10 +12,12 @@ describe('App Component', () => {
     expect(screen.getByLabelText(/enter your available ingredients/i)).toBeInTheDocument();
     
     // Check if the input has the correct placeholder
-    expect(screen.getByPlaceholderText(/chicken, rice, tomatoes, onions/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/e.g., chicken, rice, tomatoes/i)).toBeInTheDocument();
     
-    // Check if the submit button is present
-    expect(screen.getByRole('button', { name: /find recipes/i })).toBeInTheDocument();
+    // Check if the submit button is present (specifically the form submit button)
+    const submitButtons = screen.getAllByRole('button', { name: /find recipes/i });
+    const formSubmitButton = submitButtons.find(button => button.getAttribute('type') === 'submit');
+    expect(formSubmitButton).toBeInTheDocument();
   });
 
   it('renders the form with correct structure', () => {

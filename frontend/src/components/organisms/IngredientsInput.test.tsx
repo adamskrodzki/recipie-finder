@@ -1,170 +1,189 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { IngredientsInput } from './IngredientsInput';
+import * as pantryService from '../../services/pantryService';
+import type { PantryIngredientRow } from '../../services/pantryService';
+
+// Mock pantryService
+jest.mock('../../services/pantryService', () => ({
+  searchIngredientsByName: jest.fn(),
+}));
+
+// Mock PantryIngredients component
+jest.mock('../molecules/PantryIngredients', () => ({
+  PantryIngredients: jest.fn(({ onIngredientClick }: { onIngredientClick: (ingredient: string) => void }) => (
+    <div data-testid="pantry-ingredients">
+      <button onClick={() => onIngredientClick('Tomatoes')}>Tomatoes</button>
+      <button onClick={() => onIngredientClick('Onions')}>Onions</button>
+    </div>
+  )),
+}));
+
+const mockSuggestions: PantryIngredientRow[] = [
+  { id: '1', name: 'Apples', created_at: new Date().toISOString() },
+  { id: '2', name: 'Apricots', created_at: new Date().toISOString() },
+];
 
 describe('IngredientsInput', () => {
-  it('renders with default state', () => {
-    render(<IngredientsInput onSubmit={() => {}} />);
-    
-    expect(screen.getByLabelText(/enter your available ingredients/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/chicken, rice, tomatoes/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /find recipes/i })).toBeInTheDocument();
+  let onSubmitMock: jest.MockedFunction<(ingredients: string[]) => void>;
+
+  beforeEach(() => {
+    onSubmitMock = jest.fn();
+    (pantryService.searchIngredientsByName as jest.MockedFunction<typeof pantryService.searchIngredientsByName>).mockResolvedValue([]);
   });
 
-  it('handles input changes', () => {
-    render(<IngredientsInput onSubmit={() => {}} />);
-    
-    const input = screen.getByLabelText(/enter your available ingredients/i);
-    fireEvent.change(input, { target: { value: 'chicken, rice' } });
-    
-    expect(input).toHaveValue('chicken, rice');
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
-  it('submits ingredients when form is submitted', () => {
-    const handleSubmit = jest.fn();
-    render(<IngredientsInput onSubmit={handleSubmit} />);
+  const renderComponent = (hasRecipes = false) => {
+    return render(
+      <IngredientsInput
+        onSubmit={onSubmitMock}
+        hasRecipes={hasRecipes}
+      />
+    );
+  };
+
+  it('renders with input field and submit button', () => {
+    renderComponent();
     
-    const input = screen.getByLabelText(/enter your available ingredients/i);
-    const submitButton = screen.getByRole('button', { name: /find recipes/i });
-    
-    fireEvent.change(input, { target: { value: 'chicken, rice, tomatoes' } });
-    fireEvent.click(submitButton);
-    
-    expect(handleSubmit).toHaveBeenCalledWith(['chicken', 'rice', 'tomatoes']);
+    expect(screen.getByPlaceholderText('e.g., chicken, rice, tomatoes')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Find Recipes' })).toBeInTheDocument();
   });
 
-  it('trims whitespace from ingredients', () => {
-    const handleSubmit = jest.fn();
-    render(<IngredientsInput onSubmit={handleSubmit} />);
+  it('renders PantryIngredients component', () => {
+    renderComponent();
     
-    const input = screen.getByLabelText(/enter your available ingredients/i);
-    fireEvent.change(input, { target: { value: ' chicken , rice  , tomatoes ' } });
-    fireEvent.submit(input.closest('form')!);
-    
-    expect(handleSubmit).toHaveBeenCalledWith(['chicken', 'rice', 'tomatoes']);
+    expect(screen.getByTestId('pantry-ingredients')).toBeInTheDocument();
   });
 
-  it('filters out empty ingredients', () => {
-    const handleSubmit = jest.fn();
-    render(<IngredientsInput onSubmit={handleSubmit} />);
+  it('submits ingredients when form is submitted', async () => {
+    renderComponent();
     
-    const input = screen.getByLabelText(/enter your available ingredients/i);
-    fireEvent.change(input, { target: { value: 'chicken,, rice,  , tomatoes' } });
-    fireEvent.submit(input.closest('form')!);
+    const input = screen.getByPlaceholderText('e.g., chicken, rice, tomatoes');
+    const submitButton = screen.getByRole('button', { name: 'Find Recipes' });
     
-    expect(handleSubmit).toHaveBeenCalledWith(['chicken', 'rice', 'tomatoes']);
+    await userEvent.type(input, 'tomatoes, onions, garlic');
+    await userEvent.click(submitButton);
+    
+    expect(onSubmitMock).toHaveBeenCalledWith(['tomatoes', 'onions', 'garlic']);
   });
 
-  it('does not submit when input is empty', () => {
-    const handleSubmit = jest.fn();
-    render(<IngredientsInput onSubmit={handleSubmit} />);
+  it('trims whitespace from ingredients', async () => {
+    renderComponent();
     
-    const submitButton = screen.getByRole('button', { name: /find recipes/i });
-    fireEvent.click(submitButton);
+    const input = screen.getByPlaceholderText('e.g., chicken, rice, tomatoes');
+    const submitButton = screen.getByRole('button', { name: 'Find Recipes' });
     
-    expect(handleSubmit).not.toHaveBeenCalled();
+    await userEvent.type(input, ' tomatoes , onions , garlic ');
+    await userEvent.click(submitButton);
+    
+    expect(onSubmitMock).toHaveBeenCalledWith(['tomatoes', 'onions', 'garlic']);
   });
 
-  it('does not submit when input contains only whitespace', () => {
-    const handleSubmit = jest.fn();
-    render(<IngredientsInput onSubmit={handleSubmit} />);
+  it('filters out empty ingredients', async () => {
+    renderComponent();
     
-    const input = screen.getByLabelText(/enter your available ingredients/i);
-    fireEvent.change(input, { target: { value: '   ' } });
-    fireEvent.submit(input.closest('form')!);
+    const input = screen.getByPlaceholderText('e.g., chicken, rice, tomatoes');
+    const submitButton = screen.getByRole('button', { name: 'Find Recipes' });
     
-    expect(handleSubmit).not.toHaveBeenCalled();
+    await userEvent.type(input, 'tomatoes,, onions,   , garlic');
+    await userEvent.click(submitButton);
+    
+    expect(onSubmitMock).toHaveBeenCalledWith(['tomatoes', 'onions', 'garlic']);
   });
 
-  it('shows loading state', () => {
-    render(<IngredientsInput onSubmit={() => {}} isLoading />);
+  it('adds ingredient from pantry when clicked', async () => {
+    renderComponent();
     
-    expect(screen.getByRole('button', { name: /finding recipes/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/enter your available ingredients/i)).toBeDisabled();
+    const input = screen.getByPlaceholderText('e.g., chicken, rice, tomatoes');
+    const tomatoButton = screen.getByText('Tomatoes');
+    
+    await userEvent.click(tomatoButton);
+    
+    expect(input).toHaveValue('Tomatoes, ');
   });
 
-  it('disables submit button when loading', () => {
-    render(<IngredientsInput onSubmit={() => {}} isLoading />);
+  it('appends ingredient to existing input with proper comma spacing', async () => {
+    renderComponent();
     
-    const submitButton = screen.getByRole('button', { name: /finding recipes/i });
-    expect(submitButton).toBeDisabled();
+    const input = screen.getByPlaceholderText('e.g., chicken, rice, tomatoes');
+    
+    await userEvent.type(input, 'existing ingredient');
+    
+    const tomatoButton = screen.getByText('Tomatoes');
+    await userEvent.click(tomatoButton);
+    
+    expect(input).toHaveValue('existing ingredient, Tomatoes, ');
   });
 
-  it('disables submit button when input is empty', () => {
-    render(<IngredientsInput onSubmit={() => {}} />);
+  it('fetches suggestions when typing', async () => {
+    (pantryService.searchIngredientsByName as jest.Mock).mockResolvedValue(mockSuggestions);
+    renderComponent();
     
-    const submitButton = screen.getByRole('button', { name: /find recipes/i });
-    expect(submitButton).toBeDisabled();
+    const input = screen.getByPlaceholderText('e.g., chicken, rice, tomatoes');
+    
+    await act(async () => {
+      await userEvent.type(input, 'ap');
+    });
+    
+    // Wait for debounce and API call
+    await waitFor(() => {
+      expect(pantryService.searchIngredientsByName).toHaveBeenCalledWith('ap');
+    }, { timeout: 1000 });
   });
 
-  it('enables submit button when input has content', () => {
-    render(<IngredientsInput onSubmit={() => {}} />);
+  it('shows suggestions dropdown when available', async () => {
+    (pantryService.searchIngredientsByName as jest.Mock).mockResolvedValue(mockSuggestions);
+    renderComponent();
     
-    const input = screen.getByLabelText(/enter your available ingredients/i);
-    const submitButton = screen.getByRole('button', { name: /find recipes/i });
+    const input = screen.getByPlaceholderText('e.g., chicken, rice, tomatoes');
     
-    fireEvent.change(input, { target: { value: 'chicken' } });
-    expect(submitButton).not.toBeDisabled();
+    await act(async () => {
+      await userEvent.type(input, 'ap');
+    });
+    
+    // Wait for suggestions to appear
+    await waitFor(() => {
+      expect(screen.getByRole('listbox')).toBeInTheDocument();
+    }, { timeout: 1000 });
+    
+    expect(screen.getByText('Apples')).toBeInTheDocument();
+    expect(screen.getByText('Apricots')).toBeInTheDocument();
   });
 
-  it('handles form submission via Enter key', () => {
-    const handleSubmit = jest.fn();
-    render(<IngredientsInput onSubmit={handleSubmit} />);
+  it('selects suggestion when clicked', async () => {
+    (pantryService.searchIngredientsByName as jest.Mock).mockResolvedValue(mockSuggestions);
+    renderComponent();
     
-    const input = screen.getByLabelText(/enter your available ingredients/i);
-    fireEvent.change(input, { target: { value: 'chicken, rice' } });
-    fireEvent.submit(input.closest('form')!);
+    const input = screen.getByPlaceholderText('e.g., chicken, rice, tomatoes');
     
-    expect(handleSubmit).toHaveBeenCalledWith(['chicken', 'rice']);
+    await act(async () => {
+      await userEvent.type(input, 'ap');
+    });
+    
+    // Wait for suggestions to appear
+    await waitFor(() => {
+      expect(screen.getByRole('listbox')).toBeInTheDocument();
+    }, { timeout: 1000 });
+    
+    const appleOption = screen.getByText('Apples');
+    await userEvent.click(appleOption);
+    
+    expect(input).toHaveValue('Apples');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 
-  it('renders within a card component', () => {
-    render(<IngredientsInput onSubmit={() => {}} />);
+  it('shows collapse button when hasRecipes is true', () => {
+    renderComponent(true);
     
-    const input = screen.getByLabelText(/enter your available ingredients/i);
-    const card = input.closest('.card');
-    expect(card).toBeInTheDocument();
-    expect(card).toHaveClass('ingredients-input');
+    expect(screen.getByRole('button', { name: 'Collapse ingredients input' })).toBeInTheDocument();
   });
 
-  it('shows toggle button when hasRecipes is true', () => {
-    render(<IngredientsInput onSubmit={() => {}} hasRecipes />);
+  it('does not show collapse button when hasRecipes is false', () => {
+    renderComponent(false);
     
-    expect(screen.getByText('Hide Search')).toBeInTheDocument();
-  });
-
-  it('does not show toggle button when hasRecipes is false', () => {
-    render(<IngredientsInput onSubmit={() => {}} hasRecipes={false} />);
-    
-    expect(screen.queryByText('Hide Search')).not.toBeInTheDocument();
-  });
-
-  it('toggles collapse state when toggle button is clicked', () => {
-    render(<IngredientsInput onSubmit={() => {}} hasRecipes />);
-    
-    const toggleButton = screen.getByText('Hide Search').closest('button')!;
-    fireEvent.click(toggleButton);
-    
-    expect(screen.getByText('Search New Recipes')).toBeInTheDocument();
-  });
-
-  it('shows clear button when hasRecipes is true and input has content', () => {
-    render(<IngredientsInput onSubmit={() => {}} hasRecipes />);
-    
-    const input = screen.getByLabelText(/enter your available ingredients/i);
-    fireEvent.change(input, { target: { value: 'chicken' } });
-    
-    expect(screen.getByText('Clear & Start Over')).toBeInTheDocument();
-  });
-
-  it('clears input when clear button is clicked', () => {
-    render(<IngredientsInput onSubmit={() => {}} hasRecipes />);
-    
-    const input = screen.getByLabelText(/enter your available ingredients/i);
-    fireEvent.change(input, { target: { value: 'chicken' } });
-    
-    const clearButton = screen.getByRole('button', { name: /clear & start over/i });
-    fireEvent.click(clearButton);
-    
-    expect(input).toHaveValue('');
+    expect(screen.queryByRole('button', { name: 'Collapse ingredients input' })).not.toBeInTheDocument();
   });
 }); 

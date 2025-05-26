@@ -39,7 +39,6 @@ export const PantryItemForm: React.FC<PantryItemFormProps> = ({
   const setHighlightedIndex = (valueOrFn: number | ((prevIndex: number) => number)) => {
     _setHighlightedIndex(prevIndex => {
       const newValue = typeof valueOrFn === 'function' ? valueOrFn(prevIndex) : valueOrFn;
-      console.log('[PantryItemForm] setHighlightedIndex:', { prevIndex, newValue });
       return newValue;
     });
   };
@@ -53,23 +52,17 @@ export const PantryItemForm: React.FC<PantryItemFormProps> = ({
   }, [suggestions]);
 
   useEffect(() => {
-    console.log('[PantryItemForm] highlightedIndex EFFECT: current highlightedIndex is', highlightedIndex);
     if (highlightedIndex >= 0 && highlightedIndex < suggestionItemRefs.current.length) {
       const targetElement = suggestionItemRefs.current[highlightedIndex];
-      console.log('[PantryItemForm] highlightedIndex EFFECT: Scrolling to element:', targetElement, 'at index', highlightedIndex);
       targetElement?.scrollIntoView({
         behavior: 'smooth',
         block: 'nearest',
       });
-    } else {
-      console.log('[PantryItemForm] highlightedIndex EFFECT: No scroll, index out of bounds or element not found.');
     }
   }, [highlightedIndex]);
 
   const fetchSuggestions = useCallback(async (query: string) => {
-    console.log('[PantryItemForm] fetchSuggestions: Called with query -', query);
     if (query.trim().length < 3) {
-      console.log('[PantryItemForm] fetchSuggestions: Query too short, clearing suggestions.');
       setSuggestions([]);
       return;
     }
@@ -77,14 +70,12 @@ export const PantryItemForm: React.FC<PantryItemFormProps> = ({
     setHighlightedIndex(-1);
     try {
       const results: PantryIngredientRow[] = await searchIngredientsByName(query);
-      console.log('[PantryItemForm] fetchSuggestions: API results -', results);
       setSuggestions(results.map(r => ({ id: r.id, label: r.name })));
     } catch (err) {
       console.error('Failed to search ingredients:', err);
       setSuggestions([]);
     } finally {
       setIsSuggestionsLoading(false);
-      console.log('[PantryItemForm] fetchSuggestions: Finished, isSuggestionsLoading set to false.');
     }
   }, []);
 
@@ -99,13 +90,11 @@ export const PantryItemForm: React.FC<PantryItemFormProps> = ({
   useEffect(() => {
     if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
     if (isDropdownVisible && searchQuery === formData.name) {
-      console.log('[PantryItemForm] DEBOUNCE: Condition met, scheduling fetch for query -', searchQuery);
       debounceTimeoutRef.current = setTimeout(() => {
         fetchSuggestions(searchQuery);
       }, 300);
     } else if (!isDropdownVisible) {
       if (searchQuery.trim().length < 3) {
-        console.log('[PantryItemForm] DEBOUNCE: Dropdown not visible and query short, clearing suggestions.');
         setSuggestions([]);
       }
     }
@@ -115,7 +104,6 @@ export const PantryItemForm: React.FC<PantryItemFormProps> = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (formRef.current && !formRef.current.contains(event.target as Node)) {
-        console.log('[PantryItemForm] Clicked outside, hiding dropdown.');
         setIsDropdownVisible(false);
       }
     };
@@ -127,19 +115,15 @@ export const PantryItemForm: React.FC<PantryItemFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('[PantryItemForm] handleSubmit: Form submitted. highlightedIndex:', highlightedIndex, 'suggestions:', suggestions);
     setFormError(null);
     if (isDropdownVisible && highlightedIndex >= 0 && suggestions[highlightedIndex]) {
-      console.log('[PantryItemForm] handleSubmit: Submitting via highlighted item selection.');
       handleSuggestionSelect(suggestions[highlightedIndex]);
       return;
     }
     if (!formData.name.trim()) {
-      console.log('[PantryItemForm] handleSubmit: Ingredient name is required.');
       setFormError('Ingredient name is required');
       return;
     }
-    console.log('[PantryItemForm] handleSubmit: Proceeding with normal form submission.');
     setIsDropdownVisible(false);
     try {
       const submitData = { ...(item ? { id: item.id } : {}), name: formData.name.trim() };
@@ -151,19 +135,16 @@ export const PantryItemForm: React.FC<PantryItemFormProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newName = e.target.value;
-    console.log('[PantryItemForm] handleInputChange: Value changed to -', newName);
     setFormData({ name: newName });
     setSearchQuery(newName);
     setFormError(null);
     if (!isDropdownVisible && newName.trim().length > 0) {
-      console.log('[PantryItemForm] handleInputChange: Making dropdown visible.');
       setIsDropdownVisible(true);
     }
     setHighlightedIndex(-1);
   };
 
   const handleSuggestionSelect = (selectedSuggestion: DropdownListItem) => {
-    console.log('[PantryItemForm] handleSuggestionSelect: Selected -', selectedSuggestion);
     setFormData({ name: selectedSuggestion.label });
     setSearchQuery(selectedSuggestion.label);
     setIsDropdownVisible(false);
@@ -173,39 +154,30 @@ export const PantryItemForm: React.FC<PantryItemFormProps> = ({
   };
   
   const handleInputFocus = () => {
-    console.log('[PantryItemForm] handleInputFocus: Input focused. searchQuery:', searchQuery);
     if (searchQuery.trim().length > 0 ) {
       setIsDropdownVisible(true);
-      console.log('[PantryItemForm] handleInputFocus: Dropdown visible. Checking if fetch needed.');
       if(searchQuery.trim().length >= 3 && suggestions.length === 0 && !isSuggestionsLoading) {
-        console.log('[PantryItemForm] handleInputFocus: Fetching suggestions on focus.');
         fetchSuggestions(searchQuery);
       }
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    console.log('[PantryItemForm] handleKeyDown: Key pressed -', e.key, 
-      '{ isDropdownVisible, suggestionsLength: suggestions.length, isLoading: isSuggestionsLoading, highlightedIndex }');
-
     if (e.key === 'Tab' && isDropdownVisible) {
-        console.log('[PantryItemForm] handleKeyDown: Tab pressed, hiding dropdown.');
         setIsDropdownVisible(false);
         setHighlightedIndex(-1);
         return;
     }
     if (!isDropdownVisible || (suggestions.length === 0 && !isSuggestionsLoading)) {
       if (e.key === 'Escape') {
-        console.log('[PantryItemForm] handleKeyDown: Escape pressed on inactive/empty dropdown, hiding.');
         setIsDropdownVisible(false);
         setHighlightedIndex(-1);
         e.preventDefault();
         return;
       }
       if (e.key === 'Enter' && highlightedIndex === -1) {
-        console.log('[PantryItemForm] handleKeyDown: Enter on inactive dropdown, allowing form submission.');
+        // Allow form submission
       } else if (e.key !== 'Enter') {
-        console.log('[PantryItemForm] handleKeyDown: Key', e.key, 'on inactive dropdown, returning.');
         return;
       }
     }
@@ -225,16 +197,13 @@ export const PantryItemForm: React.FC<PantryItemFormProps> = ({
         break;
       case 'Enter':
         if (highlightedIndex >= 0 && suggestions[highlightedIndex]) {
-          console.log('[PantryItemForm] handleKeyDown: Enter pressed, selecting highlighted item.');
           e.preventDefault();
           handleSuggestionSelect(suggestions[highlightedIndex]);
         } else {
-          console.log('[PantryItemForm] handleKeyDown: Enter pressed, no item highlighted, hiding dropdown for form submission.');
           setIsDropdownVisible(false);
         }
         break;
       case 'Escape':
-        console.log('[PantryItemForm] handleKeyDown: Escape pressed, hiding dropdown.');
         e.preventDefault();
         setIsDropdownVisible(false);
         setHighlightedIndex(-1);
