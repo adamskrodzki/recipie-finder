@@ -2,8 +2,8 @@ import { supabase } from './supabaseClient';
 import type { Database } from '../types/supabase';
 
 // Base Supabase row types (assuming types are regenerated after migration)
-type UserPantryItemRow = Database['public']['Tables']['user_pantry_items']['Row']; // Expects pantry_ingredient_id
-type PantryIngredientRow = Database['public']['Tables']['pantry_ingredients']['Row'];
+export type UserPantryItemRow = Database['public']['Tables']['user_pantry_items']['Row']; // Expects pantry_ingredient_id
+export type PantryIngredientRow = Database['public']['Tables']['pantry_ingredients']['Row'];
 
 // Define the shape of the item returned by the service (with ingredient name)
 export interface PantryItemRich extends UserPantryItemRow {
@@ -36,7 +36,7 @@ type UserPantryItemServiceUpdate = Partial<Omit<UserPantryItemRow, 'id' | 'user_
  * @throws Throws an error if the operation fails.
  */
 async function getOrCreateIngredient(name: string): Promise<PantryIngredientRow> {
-  const trimmedName = name.trim();
+  const trimmedName = name.trim().toLocaleLowerCase();;
   if (!trimmedName) {
     throw new Error('Ingredient name cannot be empty.');
   }
@@ -86,6 +86,31 @@ async function getOrCreateIngredient(name: string): Promise<PantryIngredientRow>
   return newIngredient;
 }
 
+/**
+ * Searches for pantry ingredients by name (case-insensitive substring match).
+ * @param query The search string (at least 3 characters).
+ * @returns A promise that resolves to an array of matching pantry ingredients (id, name, created_at), limited to 50.
+ * @throws Throws an error if the operation fails.
+ */
+export async function searchIngredientsByName(query: string): Promise<PantryIngredientRow[]> {
+  const trimmedQuery = query.trim().toLocaleLowerCase();
+  if (trimmedQuery.length < 3) {
+    return []; // Return empty if query is too short, as per requirement
+  }
+
+  const { data, error } = await supabase
+    .from('pantry_ingredients')
+    .select('id, name, created_at')
+    .ilike('name', `%${trimmedQuery}%`) // Case-insensitive LIKE
+    .limit(50);
+
+  if (error) {
+    console.error('Error searching ingredients by name:', error);
+    throw error;
+  }
+
+  return data || [];
+}
 
 function processPantryItemQueryResult(
   item: UserPantryItemRow & { pantry_ingredients: { name: string } | null }
