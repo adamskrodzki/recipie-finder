@@ -7,7 +7,7 @@ import type { Database } from '../types/supabase'; // For PantryItemRow type
 export type PantryItem = Database['public']['Tables']['user_pantry_items']['Row'];
 
 // Request types for hook's public interface
-export type CreatePantryItemRequest = { ingredient_name: string };
+export type CreatePantryItemRequest = { name: string };
 export type UpdatePantryItemRequest = Database['public']['Tables']['user_pantry_items']['Update'];
 
 export interface UsePantryStorageReturn {
@@ -51,7 +51,12 @@ export const usePantryStorage = (): UsePantryStorageReturn => {
     setError(null);
     try {
       const fetchedItems = await pantryService.getPantryItems(currentUserId);
-      setItems(fetchedItems);
+      // Ensure all fetched items have a valid added_at or provide a fallback
+      const processedItems = fetchedItems.map(item => ({
+        ...item,
+        added_at: item.added_at || new Date().toISOString(), // Fallback for existing items if needed
+      }));
+      setItems(processedItems);
     } catch (err) {
       console.error('Failed to load pantry items:', err);
       setError(getErrorMessage(err));
@@ -81,10 +86,9 @@ export const usePantryStorage = (): UsePantryStorageReturn => {
       }
     }
 
-    // Validate ingredient_name before proceeding
-    if (!itemRequest || typeof itemRequest.ingredient_name !== 'string' || itemRequest.ingredient_name.trim() === '') {
+    if (!itemRequest || typeof itemRequest.name !== 'string' || itemRequest.name.trim() === '') {
       setError('Ingredient name cannot be empty.');
-      console.error('addItemHandler: ingredient_name is empty or invalid.');
+      console.error('addItemHandler: ingredient name (from itemRequest.name) is empty or invalid.');
       return;
     }
 
@@ -93,10 +97,15 @@ export const usePantryStorage = (): UsePantryStorageReturn => {
     try {
       const newItem = await pantryService.addPantryItem({ 
           user_id: currentUserId, 
-          ingredient_name: itemRequest.ingredient_name 
+          ingredient_name: itemRequest.name
       });
       if (newItem) {
-        setItems(prevItems => [...prevItems, newItem].sort((a, b) => new Date(b.added_at).getTime() - new Date(a.added_at).getTime()));
+        // Ensure added_at is present for optimistic update, fallback if necessary
+        const itemToAdd: PantryItem = {
+            ...newItem,
+            added_at: newItem.added_at || new Date().toISOString(),
+        };
+        setItems(prevItems => [...prevItems, itemToAdd].sort((a, b) => new Date(b.added_at).getTime() - new Date(a.added_at).getTime()));
       }
     } catch (err) {
       console.error('Failed to add pantry item:', err);
@@ -128,9 +137,15 @@ export const usePantryStorage = (): UsePantryStorageReturn => {
     try {
       const updatedItem = await pantryService.updatePantryItem(id, updates);
       if (updatedItem) {
+        // Ensure added_at is present for optimistic update, fallback if necessary
+        // Note: added_at typically shouldn't change on update, but defensive check here based on PantryItem type.
+        const itemToUpdate: PantryItem = {
+            ...updatedItem,
+            added_at: updatedItem.added_at || items.find(i => i.id === id)?.added_at || new Date().toISOString(),
+        };
         setItems(prevItems =>
           prevItems
-            .map(item => (item.id === id ? updatedItem : item))
+            .map(item => (item.id === id ? itemToUpdate : item))
             .sort((a, b) => new Date(b.added_at).getTime() - new Date(a.added_at).getTime())
         );
       }

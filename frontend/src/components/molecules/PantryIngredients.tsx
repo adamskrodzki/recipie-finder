@@ -29,10 +29,10 @@ export const PantryIngredients: React.FC<PantryIngredientsProps> = ({
             key={item.id}
             variant="secondary"
             size="small"
-            onClick={() => onIngredientClick(item.name)}
+            onClick={() => onIngredientClick(item.ingredient_name)}
             className="pantry-ingredients__item"
           >
-            {item.name}
+            {item.ingredient_name}
           </Button>
         ))}
       </div>

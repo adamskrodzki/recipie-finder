@@ -1,16 +1,27 @@
 import React, { useState } from 'react';
-import type { PantryItem, CreatePantryItemRequest, UpdatePantryItemRequest } from '../../types/Pantry';
-import { usePantryStorage } from '../../hooks/usePantryStorage';
+import {
+  usePantryStorage,
+  type PantryItem as HookPantryItem,
+  type CreatePantryItemRequest,
+  type UpdatePantryItemRequest
+} from '../../hooks/usePantryStorage';
 import { PantryItemCard } from '../atoms/PantryItemCard';
 import { PantryItemForm } from '../molecules/PantryItemForm';
+import type { PantryItem as FormPantryItem } from '../../types/Pantry';
 import { Button } from '../atoms/Button';
 import './PantryPage.css';
 
 export const PantryPage: React.FC = () => {
-  const { items, isLoading, error, addItem, updateItem, removeItem } = usePantryStorage();
+  const { items: hookItems, isLoading, error, addItem, updateItem, removeItem } = usePantryStorage();
   const [showForm, setShowForm] = useState(false);
-  const [editingItem, setEditingItem] = useState<PantryItem | null>(null);
+  const [editingItem, setEditingItem] = useState<HookPantryItem | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+
+  const toDisplayItem = (item: HookPantryItem): FormPantryItem => ({
+    id: item.id,
+    name: item.ingredient_name,
+    addedAt: new Date(item.added_at),
+  });
 
   const handleAddItem = async (data: CreatePantryItemRequest) => {
     setFormLoading(true);
@@ -24,12 +35,15 @@ export const PantryPage: React.FC = () => {
     }
   };
 
-  const handleUpdateItem = async (data: UpdatePantryItemRequest) => {
+  const handleUpdateItem = async (formData: { name: string }) => {
     if (!editingItem) return;
     
     setFormLoading(true);
     try {
-      await updateItem(editingItem.id, data);
+      const updatePayload: UpdatePantryItemRequest = {
+        ingredient_name: formData.name,
+      };
+      await updateItem(editingItem.id, updatePayload);
       setEditingItem(null);
     } catch {
       // Error is handled by the hook
@@ -44,7 +58,7 @@ export const PantryPage: React.FC = () => {
     }
   };
 
-  const handleEditItem = (item: PantryItem) => {
+  const handleEditItem = (item: HookPantryItem) => {
     setEditingItem(item);
     setShowForm(false);
   };
@@ -54,10 +68,11 @@ export const PantryPage: React.FC = () => {
     setEditingItem(null);
   };
 
-  const sortedItems = [...items].sort((a, b) => {
-    // Sort by name alphabetically
-    return a.name.localeCompare(b.name);
-  });
+  const sortedDisplayItems = hookItems
+    .map(toDisplayItem)
+    .sort((a, b) => {
+      return a.name.localeCompare(b.name);
+    });
 
   if (isLoading) {
     return (
@@ -97,9 +112,9 @@ export const PantryPage: React.FC = () => {
       {(showForm || editingItem) && (
         <div className="pantry-page__form">
           <PantryItemForm
-            item={editingItem || undefined}
+            item={editingItem ? toDisplayItem(editingItem) : undefined}
             onSubmit={editingItem ? 
-              (data) => handleUpdateItem(data as UpdatePantryItemRequest) : 
+              (data) => handleUpdateItem(data as { name: string }) : 
               (data) => handleAddItem(data as CreatePantryItemRequest)
             }
             onCancel={handleCancelForm}
@@ -109,18 +124,18 @@ export const PantryPage: React.FC = () => {
       )}
 
       <div className="pantry-page__content">
-        {sortedItems.length === 0 ? (
+        {sortedDisplayItems.length === 0 ? (
           <div className="pantry-page__empty">
             <h3>Your pantry is empty</h3>
             <p>Start by adding some ingredients to keep track of what you have.</p>
           </div>
         ) : (
           <div className="pantry-page__items">
-            {sortedItems.map((item) => (
+            {sortedDisplayItems.map((item) => (
               <PantryItemCard
                 key={item.id}
                 item={item}
-                onEdit={handleEditItem}
+                onEdit={() => handleEditItem(hookItems.find(hi => hi.id === item.id)!)}
                 onRemove={handleRemoveItem}
               />
             ))}
