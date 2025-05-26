@@ -55,28 +55,7 @@ export const PantryPage: React.FC = () => {
   };
 
   const sortedItems = [...items].sort((a, b) => {
-    // Sort by expiration status first (expired, expiring soon, then by date)
-    const now = new Date();
-    const aExpired = a.expiresAt && a.expiresAt < now;
-    const bExpired = b.expiresAt && b.expiresAt < now;
-    
-    if (aExpired && !bExpired) return -1;
-    if (!aExpired && bExpired) return 1;
-    
-    const aExpiringSoon = a.expiresAt && a.expiresAt > now && a.expiresAt <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    const bExpiringSoon = b.expiresAt && b.expiresAt > now && b.expiresAt <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    
-    if (aExpiringSoon && !bExpiringSoon) return -1;
-    if (!aExpiringSoon && bExpiringSoon) return 1;
-    
-    // Then sort by expiration date
-    if (a.expiresAt && b.expiresAt) {
-      return a.expiresAt.getTime() - b.expiresAt.getTime();
-    }
-    if (a.expiresAt && !b.expiresAt) return -1;
-    if (!a.expiresAt && b.expiresAt) return 1;
-    
-    // Finally sort by name
+    // Sort by name alphabetically
     return a.name.localeCompare(b.name);
   });
 
@@ -95,7 +74,7 @@ export const PantryPage: React.FC = () => {
       <div className="pantry-page__header">
         <h1 className="pantry-page__title">My Pantry</h1>
         <p className="pantry-page__subtitle">
-          Keep track of your ingredients and their expiration dates
+          Keep track of your available ingredients
         </p>
         
         {!showForm && !editingItem && (

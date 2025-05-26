@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FormField } from '../molecules/FormField';
 import { Button } from '../atoms/Button';
 import { Card, CardContent } from '../molecules/Card';
+import { PantryIngredients } from '../molecules/PantryIngredients';
 import './IngredientsInput.css';
 
 interface IngredientsInputProps {
@@ -52,6 +53,21 @@ export const IngredientsInput: React.FC<IngredientsInputProps> = ({
     setIsCollapsed(false);
   };
 
+  const handlePantryIngredientClick = (ingredient: string) => {
+    // Parse existing ingredients
+    const currentIngredients = ingredients
+      .split(',')
+      .map(item => item.trim())
+      .filter(item => item.length > 0);
+    
+    // Check if ingredient is already in the list
+    if (!currentIngredients.includes(ingredient)) {
+      // Add the new ingredient
+      const newIngredients = [...currentIngredients, ingredient];
+      setIngredients(newIngredients.join(', '));
+    }
+  };
+
   return (
     <div className={`ingredients-input-container ${shouldCollapse ? 'ingredients-input-container--collapsible' : ''}`}>
       {shouldCollapse && (
@@ -75,6 +91,8 @@ export const IngredientsInput: React.FC<IngredientsInputProps> = ({
         <Card className="ingredients-input">
           <CardContent>
             <form onSubmit={handleSubmit} className="ingredients-input__form">
+              <PantryIngredients onIngredientClick={handlePantryIngredientClick} />
+              
               <FormField
                 id="ingredients"
                 label="Enter your available ingredients (comma-separated):"

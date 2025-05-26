@@ -184,12 +184,11 @@ export class LocalStorageRecipeStorage implements RecipeStorage {
   async getPantryItems(): Promise<PantryItem[]> {
     try {
       const stored = localStorage.getItem(this.PANTRY_KEY);
-      const items: Array<Omit<PantryItem, 'addedAt' | 'expiresAt'> & { addedAt: string; expiresAt?: string }> = stored ? JSON.parse(stored) : [];
+      const items: Array<Omit<PantryItem, 'addedAt'> & { addedAt: string }> = stored ? JSON.parse(stored) : [];
       // Convert date strings back to Date objects
       return items.map((item) => ({
         ...item,
         addedAt: new Date(item.addedAt),
-        expiresAt: item.expiresAt ? new Date(item.expiresAt) : undefined,
       }));
     } catch (error) {
       console.error('Error reading pantry items from localStorage:', error);
@@ -203,9 +202,7 @@ export class LocalStorageRecipeStorage implements RecipeStorage {
       const newItem: PantryItem = {
         id: crypto.randomUUID(),
         name: item.name.trim(),
-        category: item.category?.trim(),
         addedAt: new Date(),
-        expiresAt: item.expiresAt,
       };
       
       items.push(newItem);
@@ -230,7 +227,6 @@ export class LocalStorageRecipeStorage implements RecipeStorage {
         ...items[itemIndex],
         ...updates,
         name: updates.name?.trim() || items[itemIndex].name,
-        category: updates.category?.trim() || items[itemIndex].category,
       };
       
       items[itemIndex] = updatedItem;

@@ -21,8 +21,6 @@ export const PantryItemForm: React.FC<PantryItemFormProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     name: item?.name || '',
-    category: item?.category || '',
-    expiresAt: item?.expiresAt ? item.expiresAt.toISOString().split('T')[0] : '',
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -39,8 +37,6 @@ export const PantryItemForm: React.FC<PantryItemFormProps> = ({
       const submitData = {
         ...(item ? { id: item.id } : {}),
         name: formData.name.trim(),
-        category: formData.category.trim() || undefined,
-        expiresAt: formData.expiresAt ? new Date(formData.expiresAt) : undefined,
       };
 
       await onSubmit(submitData);
@@ -82,29 +78,6 @@ export const PantryItemForm: React.FC<PantryItemFormProps> = ({
           required
           disabled={isLoading}
         />
-
-        <FormField
-          id="pantry-item-category"
-          label="Category (Optional)"
-          value={formData.category}
-          onChange={handleInputChange('category')}
-          placeholder="e.g., Protein, Vegetable, Dairy"
-          disabled={isLoading}
-        />
-
-        <div className="form-field">
-          <label htmlFor="pantry-item-expires" className="form-field__label">
-            Expiration Date (Optional)
-          </label>
-          <input
-            id="pantry-item-expires"
-            type="date"
-            value={formData.expiresAt}
-            onChange={handleInputChange('expiresAt')}
-            disabled={isLoading}
-            className="form-field__input"
-          />
-        </div>
       </div>
 
       <div className="pantry-item-form__actions">

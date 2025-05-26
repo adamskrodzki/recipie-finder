@@ -16,12 +16,7 @@ export const PantryItemCard: React.FC<PantryItemCardProps> = ({
   onRemove,
   className = '',
 }) => {
-  const isExpired = item.expiresAt && item.expiresAt < new Date();
-  const isExpiringSoon = item.expiresAt && 
-    item.expiresAt > new Date() && 
-    item.expiresAt <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
-  const cardClass = `pantry-item-card ${isExpired ? 'pantry-item-card--expired' : ''} ${isExpiringSoon ? 'pantry-item-card--expiring' : ''} ${className}`.trim();
+  const cardClass = `pantry-item-card ${className}`.trim();
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
@@ -36,20 +31,12 @@ export const PantryItemCard: React.FC<PantryItemCardProps> = ({
       <div className="pantry-item-card__content">
         <div className="pantry-item-card__header">
           <h3 className="pantry-item-card__name">{item.name}</h3>
-          {item.category && (
-            <span className="pantry-item-card__category">{item.category}</span>
-          )}
         </div>
         
         <div className="pantry-item-card__dates">
           <div className="pantry-item-card__added">
             Added: {formatDate(item.addedAt)}
           </div>
-          {item.expiresAt && (
-            <div className={`pantry-item-card__expires ${isExpired ? 'pantry-item-card__expires--expired' : ''} ${isExpiringSoon ? 'pantry-item-card__expires--expiring' : ''}`}>
-              {isExpired ? 'Expired: ' : 'Expires: '}{formatDate(item.expiresAt)}
-            </div>
-          )}
         </div>
       </div>
       
