@@ -1,14 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as pantryService from '../services/pantryService';
 import { useAuth } from './useAuth';
-import type { Database } from '../types/supabase'; // For PantryItemRow type
+import type { PantryItemRich } from '../services/pantryService'; 
+import type { Database } from '../types/supabase';
 
-// Explicitly type PantryItem based on Supabase schema
-export type PantryItem = Database['public']['Tables']['user_pantry_items']['Row'];
+// The hook will primarily work with PantryItemRich which includes the ingredient_name.
+export type PantryItem = PantryItemRich;
 
 // Request types for hook's public interface
-export type CreatePantryItemRequest = { name: string };
-export type UpdatePantryItemRequest = Database['public']['Tables']['user_pantry_items']['Update'];
+// addItem still takes a name, the service will resolve it to an ID.
+export type CreatePantryItemRequest = { name: string; /* other fields like quantity, unit if added */ };
+
+// UpdatePantryItemRequest now allows for name change, and other fields directly from UserPantryItemRow
+// but omits fields managed by the DB or service logic internally for this specific request structure.
+// The service's update type is more flexible; this is what the hook exposes.
+export type UpdatePantryItemRequest = 
+  Partial<Omit<Database['public']['Tables']['user_pantry_items']['Row'], 'id' | 'user_id' | 'added_at' | 'updated_at' | 'pantry_ingredient_id'>> & 
+  { ingredient_name?: string }; // Allow changing the ingredient by name
 
 export interface UsePantryStorageReturn {
   items: PantryItem[];
@@ -50,11 +58,14 @@ export const usePantryStorage = (): UsePantryStorageReturn => {
     setIsLoading(true);
     setError(null);
     try {
+      // pantryService.getPantryItems now returns PantryItemRich[]
       const fetchedItems = await pantryService.getPantryItems(currentUserId);
       // Ensure all fetched items have a valid added_at or provide a fallback
+      // and that ingredient_name is present (which it should be from PantryItemRich)
       const processedItems = fetchedItems.map(item => ({
         ...item,
-        added_at: item.added_at || new Date().toISOString(), // Fallback for existing items if needed
+        added_at: item.added_at || new Date().toISOString(),
+        // ingredient_name is already part of PantryItemRich, no need for pantry_ingredients check here for name
       }));
       setItems(processedItems);
     } catch (err) {
@@ -95,11 +106,15 @@ export const usePantryStorage = (): UsePantryStorageReturn => {
     setIsLoading(true);
     setError(null);
     try {
-      const newItem = await pantryService.addPantryItem({ 
+      // pantryService.addPantryItem now takes { user_id, ingredient_name, ...other_fields }
+      // and returns PantryItemRich or null
+      const newItem = await pantryService.addPantryItem({
           user_id: currentUserId, 
-          ingredient_name: itemRequest.name
+          ingredient_name: itemRequest.name,
+          // Pass other fields from itemRequest if they exist e.g. quantity, unit
       });
       if (newItem) {
+        // newItem is already PantryItemRich, which includes ingredient_name
         // Ensure added_at is present for optimistic update, fallback if necessary
         const itemToAdd: PantryItem = {
             ...newItem,
@@ -131,14 +146,21 @@ export const usePantryStorage = (): UsePantryStorageReturn => {
       console.warn('updateItemHandler called with no updates.');
       return;
     }
+    // If ingredient_name is being updated, ensure it's not empty
+    if (typeof updates.ingredient_name === 'string' && updates.ingredient_name.trim() === '') {
+        setError('Ingredient name cannot be empty when updating.');
+        console.error('updateItemHandler: ingredient_name update is empty.');
+        return;
+    }
 
     setIsLoading(true);
     setError(null);
     try {
+      // pantryService.updatePantryItem now takes (id, updates) where updates can include ingredient_name
+      // and returns PantryItemRich or null
       const updatedItem = await pantryService.updatePantryItem(id, updates);
       if (updatedItem) {
-        // Ensure added_at is present for optimistic update, fallback if necessary
-        // Note: added_at typically shouldn't change on update, but defensive check here based on PantryItem type.
+        // updatedItem is already PantryItemRich
         const itemToUpdate: PantryItem = {
             ...updatedItem,
             added_at: updatedItem.added_at || items.find(i => i.id === id)?.added_at || new Date().toISOString(),
@@ -158,8 +180,11 @@ export const usePantryStorage = (): UsePantryStorageReturn => {
   };
 
   const removeItemHandler = async (id: string): Promise<void> => {
-    if (!user?.id) {
+    if (!user?.id) { // No need to ensureSession just to check for user.id before calling service
       setError('User session not available. Cannot remove pantry item.');
+      // The service itself doesn't need user.id, only itemId, RLS handles auth.
+      // However, it's good practice for the hook to Gate this if it implies user context.
+      // Let's keep this check for consistency, though the service call would proceed.
       return;
     }
     setIsLoading(true);

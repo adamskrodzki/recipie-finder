@@ -9,26 +9,52 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      pantry_ingredients: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       user_pantry_items: {
         Row: {
           added_at: string
           id: string
-          ingredient_name: string
+          pantry_ingredient_id: string
           user_id: string
         }
         Insert: {
           added_at?: string
           id?: string
-          ingredient_name: string
+          pantry_ingredient_id: string
           user_id: string
         }
         Update: {
           added_at?: string
           id?: string
-          ingredient_name?: string
+          pantry_ingredient_id?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_pantry_ingredient"
+            columns: ["pantry_ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "pantry_ingredients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
