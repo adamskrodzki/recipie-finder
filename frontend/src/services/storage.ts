@@ -1,4 +1,5 @@
 import type { Recipe } from '../types/Recipe';
+import type { PantryItem, CreatePantryItemRequest, UpdatePantryItemRequest } from '../types/Pantry';
 
 // Storage interface for recipe favorites and ratings
 export interface RecipeStorage {
@@ -24,6 +25,13 @@ export interface RecipeStorage {
     favorites: string[];
     ratings: Record<string, number>;
   }>;
+  
+  // Pantry management
+  getPantryItems(): Promise<PantryItem[]>;
+  addPantryItem(item: CreatePantryItemRequest): Promise<PantryItem>;
+  updatePantryItem(id: string, updates: UpdatePantryItemRequest): Promise<PantryItem>;
+  removePantryItem(id: string): Promise<void>;
+  getPantryItem(id: string): Promise<PantryItem | undefined>;
 }
 
 // LocalStorage implementation
@@ -31,6 +39,7 @@ export class LocalStorageRecipeStorage implements RecipeStorage {
   private readonly FAVORITES_KEY = 'recipe-finder-favorites';
   private readonly RATINGS_KEY = 'recipe-finder-ratings';
   private readonly RECIPES_KEY = 'recipe-finder-recipes';
+  private readonly PANTRY_KEY = 'recipe-finder-pantry';
 
   async getFavorites(): Promise<string[]> {
     try {
@@ -169,6 +178,87 @@ export class LocalStorageRecipeStorage implements RecipeStorage {
     } catch (error) {
       console.error('Error getting favorite recipes from localStorage:', error);
       return [];
+    }
+  }
+
+  async getPantryItems(): Promise<PantryItem[]> {
+    try {
+      const stored = localStorage.getItem(this.PANTRY_KEY);
+      const items: Array<Omit<PantryItem, 'addedAt' | 'expiresAt'> & { addedAt: string; expiresAt?: string }> = stored ? JSON.parse(stored) : [];
+      // Convert date strings back to Date objects
+      return items.map((item) => ({
+        ...item,
+        addedAt: new Date(item.addedAt),
+        expiresAt: item.expiresAt ? new Date(item.expiresAt) : undefined,
+      }));
+    } catch (error) {
+      console.error('Error reading pantry items from localStorage:', error);
+      return [];
+    }
+  }
+
+  async addPantryItem(item: CreatePantryItemRequest): Promise<PantryItem> {
+    try {
+      const items = await this.getPantryItems();
+      const newItem: PantryItem = {
+        id: crypto.randomUUID(),
+        name: item.name.trim(),
+        category: item.category?.trim(),
+        addedAt: new Date(),
+        expiresAt: item.expiresAt,
+      };
+      
+      items.push(newItem);
+      localStorage.setItem(this.PANTRY_KEY, JSON.stringify(items));
+      return newItem;
+    } catch (error) {
+      console.error('Error adding pantry item to localStorage:', error);
+      throw error;
+    }
+  }
+
+  async updatePantryItem(id: string, updates: UpdatePantryItemRequest): Promise<PantryItem> {
+    try {
+      const items = await this.getPantryItems();
+      const itemIndex = items.findIndex(item => item.id === id);
+      
+      if (itemIndex === -1) {
+        throw new Error(`Pantry item with id ${id} not found`);
+      }
+      
+      const updatedItem: PantryItem = {
+        ...items[itemIndex],
+        ...updates,
+        name: updates.name?.trim() || items[itemIndex].name,
+        category: updates.category?.trim() || items[itemIndex].category,
+      };
+      
+      items[itemIndex] = updatedItem;
+      localStorage.setItem(this.PANTRY_KEY, JSON.stringify(items));
+      return updatedItem;
+    } catch (error) {
+      console.error('Error updating pantry item in localStorage:', error);
+      throw error;
+    }
+  }
+
+  async removePantryItem(id: string): Promise<void> {
+    try {
+      const items = await this.getPantryItems();
+      const filteredItems = items.filter(item => item.id !== id);
+      localStorage.setItem(this.PANTRY_KEY, JSON.stringify(filteredItems));
+    } catch (error) {
+      console.error('Error removing pantry item from localStorage:', error);
+    }
+  }
+
+  async getPantryItem(id: string): Promise<PantryItem | undefined> {
+    try {
+      const items = await this.getPantryItems();
+      return items.find(item => item.id === id);
+    } catch (error) {
+      console.error('Error getting pantry item from localStorage:', error);
+      return undefined;
     }
   }
 }

@@ -9,6 +9,7 @@ export const Navigation: React.FC = () => {
   
   const isHome = location.pathname === '/';
   const isFavorites = location.pathname === '/favorites';
+  const isPantry = location.pathname === '/pantry';
 
   return (
     <nav className="navigation">
@@ -35,6 +36,15 @@ export const Navigation: React.FC = () => {
               size="medium"
             >
               My Favorites {favorites.length > 0 && `(${favorites.length})`}
+            </Button>
+          </Link>
+          
+          <Link to="/pantry">
+            <Button
+              variant={isPantry ? 'primary' : 'secondary'}
+              size="medium"
+            >
+              My Pantry
             </Button>
           </Link>
         </div>

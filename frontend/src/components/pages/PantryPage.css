@@ -1,0 +1,111 @@
+.pantry-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.pantry-page__header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.pantry-page__title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 0.5rem 0;
+}
+
+.pantry-page__subtitle {
+  font-size: 1.125rem;
+  color: #666;
+  margin: 0 0 1.5rem 0;
+}
+
+.pantry-page__add-button {
+  margin-top: 1rem;
+}
+
+.pantry-page__loading {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.125rem;
+  color: #666;
+}
+
+.pantry-page__error {
+  padding: 1rem;
+  background-color: #ffebee;
+  border: 1px solid #ffcdd2;
+  border-radius: 8px;
+  color: #c62828;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.pantry-page__form {
+  margin-bottom: 2rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pantry-page__content {
+  margin-top: 2rem;
+}
+
+.pantry-page__empty {
+  text-align: center;
+  padding: 3rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #dee2e6;
+}
+
+.pantry-page__empty h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  color: #495057;
+}
+
+.pantry-page__empty p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 1rem;
+}
+
+.pantry-page__items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .pantry-page {
+    padding: 1rem;
+  }
+  
+  .pantry-page__title {
+    font-size: 2rem;
+  }
+  
+  .pantry-page__items {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .pantry-page {
+    padding: 0.75rem;
+  }
+  
+  .pantry-page__title {
+    font-size: 1.75rem;
+  }
+  
+  .pantry-page__subtitle {
+    font-size: 1rem;
+  }
+} 
