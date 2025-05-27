@@ -23,8 +23,11 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
 
   return (
     <Card hover className="recipe-card">
-      <CardHeader>
+      <CardHeader className="recipe-card__header">
         <h3 className="recipe-card__title">{recipe.title}</h3>
+        {recipe.mealType && (
+          <span className="recipe-card__meal-type">{recipe.mealType}</span>
+        )}
       </CardHeader>
       
       <CardContent>

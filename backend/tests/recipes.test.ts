@@ -41,7 +41,7 @@ const createApp = () => {
         return res.status(400).json({ error: 'At least one valid ingredient is required' });
       }
 
-      const recipes = await openRouterService.generateRecipes(validIngredients);
+      const recipes = await openRouterService.generateRecipes(validIngredients, 'lunch');
       res.json({ recipes });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to generate recipes';

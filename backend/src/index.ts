@@ -24,7 +24,7 @@ app.get('/api/health', (req, res) => {
 // Recipe generation endpoint using OpenRouter LLM
 app.post('/api/recipes', async (req, res) => {
   try {
-    const { ingredients }: RecipeRequest = req.body
+    const { ingredients, mealType }: RecipeRequest = req.body
     
     if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
       return res.status(400).json({ error: 'Ingredients array is required' })
@@ -40,7 +40,7 @@ app.post('/api/recipes', async (req, res) => {
     }
 
     // Generate recipes using OpenRouter LLM
-    const recipes = await openRouterService.generateRecipes(validIngredients)
+    const recipes = await openRouterService.generateRecipes(validIngredients, mealType)
     
     res.json({ recipes })
   } catch (error) {
@@ -133,7 +133,7 @@ app.post('/api/debug/recipes', async (req, res) => {
 
     // Generate recipes using OpenRouter LLM with detailed logging
     console.log('Calling OpenRouter service...')
-    const recipes = await openRouterService.generateRecipes(validIngredients)
+    const recipes = await openRouterService.generateRecipes(validIngredients, 'lunch')
     
     const endTime = Date.now()
     const duration = endTime - startTime

@@ -5,12 +5,29 @@
   flex-direction: column;
 }
 
+.recipe-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.5rem; /* Add some spacing below header */
+}
+
 .recipe-card__title {
-  margin: 0;
-  font-size: 1.375rem;
-  font-weight: 700;
-  color: #1f2937;
-  line-height: 1.3;
+  margin: 0; /* Remove default margin */
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--color-primary-dark);
+}
+
+.recipe-card__meal-type {
+  background-color: var(--color-accent-light);
+  color: var(--color-accent-dark);
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem; /* More rounded pill shape */
+  font-size: 0.8rem;
+  font-weight: 600; /* Slightly bolder */
+  text-transform: capitalize;
+  margin-left: 0.5rem; /* Space from title if on same line */
 }
 
 .recipe-card__section {
