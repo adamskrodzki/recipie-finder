@@ -40,11 +40,49 @@ interface CacheEntry {
 // In-memory cache for pantry items
 let pantryItemsCache: CacheEntry | null = null;
 
+// Event system for cache invalidation
+type CacheInvalidationListener = () => void;
+const cacheInvalidationListeners: Set<CacheInvalidationListener> = new Set();
+
+/**
+ * Subscribe to cache invalidation events
+ */
+export function subscribeToCacheInvalidation(listener: CacheInvalidationListener): () => void {
+  cacheInvalidationListeners.add(listener);
+  
+  // Return unsubscribe function
+  return () => {
+    cacheInvalidationListeners.delete(listener);
+  };
+}
+
+/**
+ * Notify all listeners that cache has been invalidated
+ */
+function notifyCacheInvalidation(): void {
+  cacheInvalidationListeners.forEach(listener => {
+    try {
+      listener();
+    } catch (error) {
+      console.error('Error in cache invalidation listener:', error);
+    }
+  });
+}
+
 /**
  * Clears the pantry items cache
  */
 function clearPantryItemsCache(): void {
   pantryItemsCache = null;
+  console.log('Cache cleared, notifying listeners');
+  notifyCacheInvalidation();
+}
+
+/**
+ * Clears the pantry items cache (exported version)
+ */
+export function clearPantryCache(): void {
+  clearPantryItemsCache();
 }
 
 /**
@@ -181,6 +219,7 @@ export async function getPantryItems(userId: string): Promise<PantryItemRich[]> 
     return [];
   }
   if (isCacheValid(userId)) {
+    console.log('Returning cached pantry items for user:', userId);
     return pantryItemsCache!.data;
   }
   const { data, error } = await supabase
@@ -199,6 +238,7 @@ export async function getPantryItems(userId: string): Promise<PantryItemRich[]> 
   // The type of data from query: (UserPantryItemRow & { pantry_ingredients: { name: string } | null })[]
   const processedItems = (data || []).map(processPantryItemQueryResult);
   setCacheData(userId, processedItems);
+  console.log('Fetched and processed pantry items for user:', userId);
   return processedItems;
 }
 
@@ -237,6 +277,7 @@ export async function addPantryItem(item: UserPantryItemServiceInsert): Promise<
     }
     throw error;
   }
+  clearPantryItemsCache();
   // Process to add ingredient_name at the top level
   return data ? processPantryItemQueryResult(data as UserPantryItemRow & { pantry_ingredients: { name: string } | null }) : null;
 }

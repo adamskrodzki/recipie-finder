@@ -77,6 +77,18 @@ export const usePantryStorage = (): UsePantryStorageReturn => {
     }
   }, []);
 
+  // Subscribe to cache invalidation events
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const unsubscribe = pantryService.subscribeToCacheInvalidation(() => {
+      console.log('Cache invalidated, refetching pantry items for user:', user.id);
+      loadPantryItems(user.id);
+    });
+
+    return unsubscribe;
+  }, [user?.id, loadPantryItems]);
+
   useEffect(() => {
     if (!authLoading && user?.id) {
       loadPantryItems(user.id);
@@ -108,20 +120,13 @@ export const usePantryStorage = (): UsePantryStorageReturn => {
     try {
       // pantryService.addPantryItem now takes { user_id, ingredient_name, ...other_fields }
       // and returns PantryItemRich or null
-      const newItem = await pantryService.addPantryItem({
+      await pantryService.addPantryItem({
           user_id: currentUserId, 
           ingredient_name: itemRequest.name,
           // Pass other fields from itemRequest if they exist e.g. quantity, unit
       });
-      if (newItem) {
-        // newItem is already PantryItemRich, which includes ingredient_name
-        // Ensure added_at is present for optimistic update, fallback if necessary
-        const itemToAdd: PantryItem = {
-            ...newItem,
-            added_at: newItem.added_at || new Date().toISOString(),
-        };
-        setItems(prevItems => [...prevItems, itemToAdd].sort((a, b) => new Date(b.added_at).getTime() - new Date(a.added_at).getTime()));
-      }
+      // Refetch all items to ensure cache consistency
+      await loadPantryItems(currentUserId);
     } catch (err) {
       console.error('Failed to add pantry item:', err);
       setError(getErrorMessage(err));
@@ -158,19 +163,9 @@ export const usePantryStorage = (): UsePantryStorageReturn => {
     try {
       // pantryService.updatePantryItem now takes (id, updates) where updates can include ingredient_name
       // and returns PantryItemRich or null
-      const updatedItem = await pantryService.updatePantryItem(id, updates);
-      if (updatedItem) {
-        // updatedItem is already PantryItemRich
-        const itemToUpdate: PantryItem = {
-            ...updatedItem,
-            added_at: updatedItem.added_at || items.find(i => i.id === id)?.added_at || new Date().toISOString(),
-        };
-        setItems(prevItems =>
-          prevItems
-            .map(item => (item.id === id ? itemToUpdate : item))
-            .sort((a, b) => new Date(b.added_at).getTime() - new Date(a.added_at).getTime())
-        );
-      }
+      await pantryService.updatePantryItem(id, updates);
+      // Refetch all items to ensure cache consistency
+      await loadPantryItems(currentUserId);
     } catch (err) {
       console.error('Failed to update pantry item:', err);
       setError(getErrorMessage(err));
@@ -191,7 +186,8 @@ export const usePantryStorage = (): UsePantryStorageReturn => {
     setError(null);
     try {
       await pantryService.removePantryItem(id);
-      setItems(prevItems => prevItems.filter(item => item.id !== id));
+      // Refetch all items to ensure cache consistency
+      await loadPantryItems(user.id);
     } catch (err) {
       console.error('Failed to remove pantry item:', err);
       setError(getErrorMessage(err));
