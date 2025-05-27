@@ -1,10 +1,11 @@
+import dotenv from 'dotenv'
+dotenv.config() // Must be called before any other imports that use environment variables
+
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
 import { OpenRouterService } from './openrouter'
 import { RecipeRequest, RecipeRefinementRequest } from './types'
-
-dotenv.config()
+import { storeRecipe, updateRecipe, getRecipeById, searchRecipesByIngredients, getAllRecipes } from './services/recipeService'
 const app = express()
 app.use(cors())
 app.use(express.json())
@@ -24,7 +25,7 @@ app.get('/api/health', (req, res) => {
 // Recipe generation endpoint using OpenRouter LLM
 app.post('/api/recipes', async (req, res) => {
   try {
-    const { ingredients }: RecipeRequest = req.body
+    const { ingredients, mealType }: RecipeRequest = req.body
     
     if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
       return res.status(400).json({ error: 'Ingredients array is required' })
@@ -40,9 +41,34 @@ app.post('/api/recipes', async (req, res) => {
     }
 
     // Generate recipes using OpenRouter LLM
-    const recipes = await openRouterService.generateRecipes(validIngredients)
+    const recipes = await openRouterService.generateRecipes(validIngredients, mealType)
     
-    res.json({ recipes })
+    // Store each generated recipe in the database and override their IDs with UUIDs
+    const storedRecipes = await Promise.all(
+      recipes.map(recipe => 
+        storeRecipe(recipe, validIngredients, mealType)
+          .catch(error => {
+            console.error('Error storing recipe:', recipe.title, error);
+            return null; // Don't fail the entire request if one recipe storage fails
+          })
+      )
+    );
+
+    console.log(`Stored ${storedRecipes.filter(r => r !== null).length}/${recipes.length} recipes in database`);
+    
+    // Override the recipe IDs with the database UUIDs for the response
+    const recipesWithDbIds = recipes.map((recipe, index) => {
+      const storedRecipe = storedRecipes[index];
+      if (storedRecipe) {
+        return {
+          ...recipe,
+          id: storedRecipe.id // Use the database UUID instead of OpenRouter's simple ID
+        };
+      }
+      return recipe; // Keep original if storage failed
+    });
+    
+    res.json({ recipes: recipesWithDbIds })
   } catch (error) {
     console.error('Error generating recipes:', error)
     
@@ -76,6 +102,15 @@ app.post('/api/recipes/refine', async (req, res) => {
 
     // Refine recipe using OpenRouter LLM
     const refinedRecipe = await openRouterService.refineRecipe(recipe, instruction.trim())
+    
+    // Update the recipe in the database (refinement updates the existing recipe)
+    try {
+      const updatedStoredRecipe = await updateRecipe(recipe.id, refinedRecipe, instruction.trim());
+      console.log('Recipe refined and updated in database:', updatedStoredRecipe.id);
+    } catch (error) {
+      console.error('Error updating refined recipe in database:', error);
+      // Don't fail the request if database update fails
+    }
     
     res.json({ refinedRecipe })
   } catch (error) {
@@ -133,7 +168,7 @@ app.post('/api/debug/recipes', async (req, res) => {
 
     // Generate recipes using OpenRouter LLM with detailed logging
     console.log('Calling OpenRouter service...')
-    const recipes = await openRouterService.generateRecipes(validIngredients)
+    const recipes = await openRouterService.generateRecipes(validIngredients, 'lunch')
     
     const endTime = Date.now()
     const duration = endTime - startTime
@@ -189,6 +224,71 @@ app.post('/api/debug/recipes', async (req, res) => {
     })
   }
 })
+
+// Get recipe by ID endpoint
+app.get('/api/recipes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({ error: 'Recipe ID is required' });
+    }
+
+    const recipe = await getRecipeById(id);
+    
+    if (!recipe) {
+      return res.status(404).json({ error: 'Recipe not found' });
+    }
+
+    res.json({ recipe });
+  } catch (error) {
+    console.error('Error fetching recipe by ID:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch recipe';
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
+// Get all recipes endpoint
+app.get('/api/recipes', async (req, res) => {
+  try {
+    const { mealType } = req.query;
+    
+    const recipes = await getAllRecipes(mealType as string);
+    
+    res.json({ recipes });
+  } catch (error) {
+    console.error('Error fetching all recipes:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch recipes';
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
+// Search recipes by ingredients endpoint
+app.post('/api/recipes/search', async (req, res) => {
+  try {
+    const { ingredients } = req.body;
+    
+    if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
+      return res.status(400).json({ error: 'Ingredients array is required' });
+    }
+
+    const validIngredients = ingredients.filter(ingredient => 
+      typeof ingredient === 'string' && ingredient.trim().length > 0
+    );
+
+    if (validIngredients.length === 0) {
+      return res.status(400).json({ error: 'At least one valid ingredient is required' });
+    }
+
+    const recipes = await searchRecipesByIngredients(validIngredients);
+    
+    res.json({ recipes });
+  } catch (error) {
+    console.error('Error searching recipes by ingredients:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to search recipes';
+    res.status(500).json({ error: errorMessage });
+  }
+});
 
 const PORT = process.env.PORT || 4000
 app.listen(PORT, () => {

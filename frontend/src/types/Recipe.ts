@@ -5,6 +5,7 @@ export interface Recipe {
   steps: string[];
   rating?: number;
   isFavorite?: boolean;
+  mealType?: string;
 }
 
 export interface RecipeRequest {

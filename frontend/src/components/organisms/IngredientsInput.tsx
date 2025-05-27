@@ -4,6 +4,7 @@ import { Button } from '../atoms/Button';
 import { Card, CardContent } from '../molecules/Card';
 import { PantryIngredients } from '../molecules/PantryIngredients';
 import './IngredientsInput.css';
+import { Select, type SelectOption } from '../atoms/Select';
 
 import { DropdownList, type DropdownListItem } from '../atoms/DropdownList';
 import { searchIngredientsByName, type PantryIngredientRow } from '../../services/pantryService';
@@ -11,10 +12,20 @@ import { searchIngredientsByName, type PantryIngredientRow } from '../../service
 const LISTBOX_ID = 'ingredients-suggestions-listbox';
 
 interface IngredientsInputProps {
-  onSubmit: (ingredients: string[]) => void;
+  onSubmit: (ingredients: string[], mealType?: string) => void;
   isLoading?: boolean;
   hasRecipes?: boolean;
 }
+
+// Define meal type options
+const mealTypeOptions: SelectOption[] = [
+  { value: 'any', label: 'Any Meal Type' },
+  { value: 'breakfast', label: 'Breakfast' },
+  { value: 'lunch', label: 'Lunch' },
+  { value: 'dinner', label: 'Dinner' },
+  { value: 'snack', label: 'Snack' },
+  { value: 'dessert', label: 'Dessert' },
+];
 
 export const IngredientsInput: React.FC<IngredientsInputProps> = ({ 
   onSubmit, 
@@ -22,6 +33,7 @@ export const IngredientsInput: React.FC<IngredientsInputProps> = ({
   hasRecipes = false
 }) => {
   const [ingredients, setIngredients] = useState('');
+  const [selectedMealType, setSelectedMealType] = useState<string | undefined>(undefined);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Auto-collapse when recipes are loaded
@@ -126,7 +138,10 @@ export const IngredientsInput: React.FC<IngredientsInputProps> = ({
       .filter(ingredient => ingredient.length > 0);
 
     if (ingredientList.length > 0) {
-      onSubmit(ingredientList);
+      // Pass selectedMealType to onSubmit, if 'any' is selected, pass undefined
+      const mealTypeToSubmit = selectedMealType === 'any' ? undefined : selectedMealType;
+      console.log('Submitting ingredients:', ingredientList, 'and meal type:', mealTypeToSubmit);
+      onSubmit(ingredientList, mealTypeToSubmit);
     }
   };
 
@@ -301,6 +316,7 @@ export const IngredientsInput: React.FC<IngredientsInputProps> = ({
     setSuggestions([]);
     setIsDropdownVisible(false);
     setIsCollapsed(false);
+    setSelectedMealType(undefined);
   };
 
   const handlePantryIngredientClick = (ingredient: string) => {
@@ -396,6 +412,15 @@ export const IngredientsInput: React.FC<IngredientsInputProps> = ({
                   />
                 )}
               </div>
+
+              <Select
+                id="mealType"
+                label="Select Meal Type (optional):"
+                options={mealTypeOptions}
+                value={selectedMealType || 'any'}
+                onChange={(e) => setSelectedMealType(e.target.value === 'any' ? undefined : e.target.value)}
+                className="ingredients-input__meal-type-selector"
+              />
               
               <div className="ingredients-input__actions">
                 <Button 

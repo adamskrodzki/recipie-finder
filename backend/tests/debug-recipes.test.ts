@@ -60,7 +60,7 @@ const createApp = () => {
         });
       }
 
-      const recipes = await openRouterService.generateRecipes(validIngredients);
+      const recipes = await openRouterService.generateRecipes(validIngredients, 'lunch');
       
       const endTime = Date.now();
       const duration = endTime - startTime;

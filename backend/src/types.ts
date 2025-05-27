@@ -3,6 +3,7 @@ export interface Recipe {
   title: string;
   ingredients: string[];
   steps: string[];
+  mealType?: string;
 }
 
 export interface RecipeResponse {
@@ -11,6 +12,7 @@ export interface RecipeResponse {
 
 export interface RecipeRequest {
   ingredients: string[];
+  mealType?: string;
 }
 
 export interface RecipeRefinementRequest {

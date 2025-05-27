@@ -12,14 +12,15 @@ export class OpenRouterService {
     });
   }
 
-  async generateRecipes(ingredients: string[]): Promise<Recipe[]> {
+  async generateRecipes(ingredients: string[], mealType?: string): Promise<Recipe[]> {
+    console.log('Generating recipes with ingredients:', ingredients, 'and meal type:', mealType);
     // Define the tool for structured recipe generation
     const tools = [
       {
         type: 'function' as const,
         function: {
           name: 'generate_recipes',
-          description: 'Generate exactly 3 unique recipes using the provided ingredients',
+          description: 'Generate exactly 3 unique recipes using the provided ingredients and meal type suggestion',
           parameters: {
             type: 'object',
             properties: {
@@ -49,13 +50,17 @@ export class OpenRouterService {
                         type: 'string'
                       },
                       description: 'Step-by-step cooking instructions'
+                    },
+                    mealType: {
+                      type: 'string',
+                      description: 'Suggested meal type for the recipe (breakfast, lunch, dinner, snack, dessert)'
                     }
                   },
-                  required: ['id', 'title', 'ingredients', 'steps']
+                  required: ['id', 'title', 'ingredients', 'steps', 'mealType']
                 },
                 minItems: 3,
                 maxItems: 3,
-                description: 'Array of exactly 3 unique recipes'
+                description: 'Array of exactly 3 unique recipes inline with ingredients and meal type suggestion'
               }
             },
             required: ['recipes']
@@ -68,7 +73,7 @@ export class OpenRouterService {
       const messages: ChatCompletionMessageParam[] = [
         {
           role: 'system',
-          content: `You are an expert chef and recipe creator. Your task is to generate creative, practical, and delicious recipes based on provided ingredients.
+          content: `You are an expert chef and recipe creator. Your task is to generate creative, practical, and delicious recipes based on provided ingredients and meal type request.
 
 Guidelines:
 - Each recipe must use all of the provided ingredients
@@ -77,18 +82,19 @@ Guidelines:
 - Prefer simple recipies over complex, best taste with minimum effort,
 - Make recipes suitable for home cooking with standard kitchen equipment
 - Ensure recipes are from different cuisines or cooking styles for variety
+- when meal type is provided, make sure the recipes are inline with the meal type
 - Use proper cooking terminology and techniques`
         },
         {
           role: 'user',
-          content: 'Generate 3 recipes using: chicken, tomatoes, onions'
+          content: 'Generate 3 recipes using these ingredients: chicken, carrots for breakfast'
         },
         {
           role: 'assistant',
           content: null,
           tool_calls: [
             {
-              id: 'call_example',
+              id: 'call_4QkEnC1oBnCxUqDMbK6Nosm8',
               type: 'function',
               function: {
                 name: 'generate_recipes',
@@ -96,45 +102,79 @@ Guidelines:
                   recipes: [
                     {
                       id: '1',
-                      title: 'Mediterranean Chicken Skillet',
-                      ingredients: ['chicken breast', 'tomatoes', 'onions', 'olive oil', 'garlic', 'oregano', 'feta cheese', 'salt', 'pepper'],
+                      title: 'Chicken-Carrot Breakfast Hash',
+                      ingredients: [
+                        '1 cup cooked chicken breast, diced',
+                        '1 large carrot, diced',
+                        '1 medium potato, diced (skin on)',
+                        '½ small onion, diced',
+                        '½ bell pepper, diced',
+                        '2 tbsp olive oil',
+                        '½ tsp smoked paprika',
+                        'salt',
+                        'pepper',
+                        '2 eggs (optional, for serving)'
+                      ],
                       steps: [
-                        'Heat olive oil in a large skillet over medium-high heat',
-                        'Season chicken breast with salt and pepper, then cook for 6-7 minutes per side until golden',
-                        'Remove chicken and set aside, add sliced onions to the same pan',
-                        'Cook onions for 3-4 minutes until softened, add minced garlic',
-                        'Add diced tomatoes and oregano, simmer for 5 minutes',
-                        'Return chicken to pan, top with crumbled feta cheese',
-                        'Cover and cook for 2-3 minutes until cheese is slightly melted'
-                      ]
+                        'Heat olive oil in a large skillet over medium-high heat.',
+                        'Add diced potato and cook, stirring occasionally, until lightly browned, about 5 minutes.',
+                        'Stir in onion, bell pepper, and carrot; sauté until vegetables soften slightly, 4-5 minutes.',
+                        'Add diced chicken, smoked paprika, salt, and pepper; cook until chicken is heated through and carrots are tender, 3-4 minutes more.',
+                        'Taste and adjust seasoning. If using eggs, push hash to one side of skillet, crack eggs into the space, cover, and cook to desired doneness.',
+                        'Serve hot straight from the pan.'
+                      ],
+                      mealType: 'breakfast'
                     },
                     {
                       id: '2',
-                      title: 'Hearty Chicken and Tomato Soup',
-                      ingredients: ['chicken thighs', 'tomatoes', 'onions', 'chicken broth', 'carrots', 'celery', 'bay leaves', 'thyme', 'salt', 'pepper'],
+                      title: 'Ginger Chicken & Carrot Congee',
+                      ingredients: [
+                        '¾ cup jasmine or short-grain rice, rinsed',
+                        '6 cups chicken broth',
+                        '1 cup raw chicken thigh, thinly sliced',
+                        '1 medium carrot, julienned',
+                        '1-inch knob fresh ginger, sliced',
+                        '1 clove garlic, minced',
+                        '1 tbsp soy sauce',
+                        '1 tsp sesame oil',
+                        'salt',
+                        'white pepper',
+                        '2 scallions, sliced (for garnish)'
+                      ],
                       steps: [
-                        'In a large pot, brown chicken thighs on all sides, then remove and set aside',
-                        'Add diced onions, carrots, and celery to the pot, cook until softened',
-                        'Add diced tomatoes and cook for 3 minutes',
-                        'Return chicken to pot, add chicken broth, bay leaves, and thyme',
-                        'Bring to a boil, then reduce heat and simmer for 25-30 minutes',
-                        'Remove chicken, shred the meat, and return to pot',
-                        'Season with salt and pepper, simmer for 5 more minutes'
-                      ]
+                        'In a medium saucepan combine rice, chicken broth, ginger, and garlic; bring to a boil.',
+                        'Reduce heat to low, partially cover, and simmer 25-30 minutes, stirring occasionally, until rice breaks down and porridge thickens.',
+                        'Add sliced chicken and julienned carrot; cook, stirring, until chicken is no longer pink and carrot is tender, about 6-8 minutes.',
+                        'Season with soy sauce, sesame oil, salt, and white pepper to taste.',
+                        'Ladle into bowls and garnish with sliced scallions.'
+                      ],
+                      mealType: 'breakfast'
                     },
                     {
                       id: '3',
-                      title: 'Baked Chicken with Tomato-Onion Topping',
-                      ingredients: ['chicken drumsticks', 'tomatoes', 'onions', 'balsamic vinegar', 'honey', 'rosemary', 'garlic powder', 'olive oil', 'salt', 'pepper'],
+                      title: 'Mediterranean Chicken & Carrot Egg Muffins',
+                      ingredients: [
+                        '1 cup cooked chicken, shredded',
+                        '1 medium carrot, grated',
+                        '6 large eggs',
+                        '½ cup fresh spinach, chopped',
+                        '¼ cup crumbled feta cheese',
+                        '2 tbsp milk',
+                        '½ tsp dried oregano',
+                        '¼ tsp garlic powder',
+                        'salt',
+                        'pepper',
+                        'olive oil or cooking spray (for tin)'
+                      ],
                       steps: [
-                        'Preheat oven to 400°F (200°C)',
-                        'Season chicken drumsticks with salt, pepper, and garlic powder',
-                        'Place chicken in a baking dish and drizzle with olive oil',
-                        'In a bowl, mix sliced tomatoes and onions with balsamic vinegar and honey',
-                        'Top chicken with the tomato-onion mixture and fresh rosemary',
-                        'Bake for 35-40 minutes until chicken is cooked through',
-                        'Let rest for 5 minutes before serving'
-                      ]
+                        'Preheat oven to 190 °C / 375 °F. Lightly grease a 12-cup muffin tin with olive oil or cooking spray.',
+                        'In a mixing bowl whisk eggs with milk, oregano, garlic powder, salt, and pepper.',
+                        'Fold in shredded chicken, grated carrot, spinach, and feta.',
+                        'Divide mixture evenly among muffin cups, filling each about ¾ full.',
+                        'Bake 15-18 minutes, or until centers are set and tops are lightly golden.',
+                        'Cool 2 minutes, run a knife around edges, and lift out. Serve warm or at room temperature.'
+                      ],
+                      mealType: 'breakfast'
                     }
                   ]
                 })
@@ -144,12 +184,12 @@ Guidelines:
         },
         {
           role: 'tool',
-          tool_call_id: 'call_example',
+          tool_call_id: 'call_4QkEnC1oBnCxUqDMbK6Nosm8',
           content: 'Successfully generated 3 diverse chicken recipes using the provided ingredients.'
         },
         {
           role: 'user',
-          content: `Generate 3 recipes using these ingredients: ${ingredients.join(', ')}`
+          content: `Generate 3 recipes using these ingredients: ${ingredients.join(', ')} for ${mealType || 'any meal'}`
         }
       ];
 
@@ -211,8 +251,8 @@ Guidelines:
       const recipes = toolArgs.recipes as Recipe[];
       
       // Validate the response structure
-      if (!Array.isArray(recipes) || recipes.length !== 3) {
-        throw new Error('Invalid response format: expected array of 3 recipes');
+      if (!Array.isArray(recipes)) {
+        throw new Error('Invalid response format: expected array of recipes');
       }
 
       // Validate each recipe has required fields

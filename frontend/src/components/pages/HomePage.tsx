@@ -26,7 +26,7 @@ export const HomePage: React.FC = () => {
     saveRecipe
   } = useRecipeStorage();
 
-  const handleIngredientsSubmit = async (ingredients: string[]) => {
+  const handleIngredientsSubmit = async (ingredients: string[], mealType?: string) => {
     setIsLoading(true);
     setError(null);
     
@@ -36,7 +36,7 @@ export const HomePage: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ ingredients }),
+        body: JSON.stringify({ ingredients, mealType }),
       });
 
       if (!response.ok) {
