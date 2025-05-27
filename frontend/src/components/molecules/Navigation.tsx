@@ -1,11 +1,13 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useRecipeStorage } from '../../hooks/useRecipeStorage';
+import { usePantryStorage } from '../../hooks/usePantryStorage';
 import { Button } from '../atoms/Button';
 import './Navigation.css';
 
 export const Navigation: React.FC = () => {
   const location = useLocation();
   const { favorites } = useRecipeStorage();
+  const { items: pantryItems } = usePantryStorage();
   
   const isHome = location.pathname === '/';
   const isFavorites = location.pathname === '/favorites';
@@ -44,7 +46,7 @@ export const Navigation: React.FC = () => {
               variant={isPantry ? 'primary' : 'secondary'}
               size="medium"
             >
-              My Pantry
+              My Pantry {pantryItems.length > 0 && `(${pantryItems.length})`}
             </Button>
           </Link>
         </div>

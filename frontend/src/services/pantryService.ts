@@ -28,6 +28,53 @@ type UserPantryItemServiceUpdate = Partial<Omit<UserPantryItemRow, 'id' | 'user_
     pantry_ingredient_id?: string; // Or allow direct update of ID
 };
 
+// Cache configuration
+const CACHE_TTL_MS = 30 * 1000; // 5 minutes
+
+interface CacheEntry {
+  data: PantryItemRich[];
+  timestamp: number;
+  userId: string;
+}
+
+// In-memory cache for pantry items
+let pantryItemsCache: CacheEntry | null = null;
+
+/**
+ * Clears the pantry items cache
+ */
+function clearPantryItemsCache(): void {
+  pantryItemsCache = null;
+}
+
+/**
+ * Checks if cached data is still valid
+ */
+function isCacheValid(userId: string): boolean {
+  if (!pantryItemsCache) return false;
+  if (pantryItemsCache.userId !== userId) return false;
+  
+  const now = Date.now();
+  const isExpired = (now - pantryItemsCache.timestamp) > CACHE_TTL_MS;
+  
+  if (isExpired) {
+    clearPantryItemsCache();
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Sets cache data
+ */
+function setCacheData(userId: string, data: PantryItemRich[]): void {
+  pantryItemsCache = {
+    data,
+    timestamp: Date.now(),
+    userId
+  };
+}
 
 /**
  * Fetches a specific ingredient by name, or creates it if it doesn't exist.
@@ -133,6 +180,9 @@ export async function getPantryItems(userId: string): Promise<PantryItemRich[]> 
     console.warn('getPantryItems called without a userId.');
     return [];
   }
+  if (isCacheValid(userId)) {
+    return pantryItemsCache!.data;
+  }
   const { data, error } = await supabase
     .from('user_pantry_items')
     .select(`
@@ -147,7 +197,9 @@ export async function getPantryItems(userId: string): Promise<PantryItemRich[]> 
     throw error;
   }
   // The type of data from query: (UserPantryItemRow & { pantry_ingredients: { name: string } | null })[]
-  return (data || []).map(processPantryItemQueryResult);
+  const processedItems = (data || []).map(processPantryItemQueryResult);
+  setCacheData(userId, processedItems);
+  return processedItems;
 }
 
 /**
@@ -209,6 +261,7 @@ export async function removePantryItem(itemId: string): Promise<void> {
     console.error('Error deleting pantry item:', error);
     throw error;
   }
+  clearPantryItemsCache();
 }
 
 /**
@@ -267,5 +320,6 @@ export async function updatePantryItem(itemId: string, updates: UserPantryItemSe
     }
     throw error;
   }
+  clearPantryItemsCache();
   return data ? processPantryItemQueryResult(data as UserPantryItemRow & { pantry_ingredients: { name: string } | null }) : null;
 } 
