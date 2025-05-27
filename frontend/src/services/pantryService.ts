@@ -278,6 +278,7 @@ export async function addPantryItem(item: UserPantryItemServiceInsert): Promise<
     throw error;
   }
   clearPantryItemsCache();
+  console.log('Added pantry item, cache cleared and listeners notified');
   // Process to add ingredient_name at the top level
   return data ? processPantryItemQueryResult(data as UserPantryItemRow & { pantry_ingredients: { name: string } | null }) : null;
 }
