@@ -259,10 +259,14 @@ export class LocalStorageRecipeStorage implements RecipeStorage {
   }
 }
 
+// Import the Supabase implementation
+import { createSupabaseRecipeStorage } from './supabaseStorage';
+
 // Factory function to create storage instance
 // This makes it easy to switch implementations in the future
 export const createRecipeStorage = (): RecipeStorage => {
-  return new LocalStorageRecipeStorage();
+  // Use Supabase storage instead of localStorage for better user experience
+  return createSupabaseRecipeStorage();
 };
 
 // Singleton instance for the app

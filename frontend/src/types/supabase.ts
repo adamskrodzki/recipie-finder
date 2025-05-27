@@ -56,12 +56,156 @@ export type Database = {
           },
         ]
       }
+      recipes: {
+        Row: {
+          id: string
+          title: string
+          ingredients: string[]
+          steps: string[]
+          meal_type: string | null
+          original_prompt_ingredients: string[] | null
+          refinement_instruction: string | null
+          parent_recipe_id: string | null
+          ai_model_used: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          ingredients: string[]
+          steps: string[]
+          meal_type?: string | null
+          original_prompt_ingredients?: string[] | null
+          refinement_instruction?: string | null
+          parent_recipe_id?: string | null
+          ai_model_used?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          ingredients?: string[]
+          steps?: string[]
+          meal_type?: string | null
+          original_prompt_ingredients?: string[] | null
+          refinement_instruction?: string | null
+          parent_recipe_id?: string | null
+          ai_model_used?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_favorites: {
+        Row: {
+          id: string
+          user_id: string
+          recipe_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          recipe_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          recipe_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_favorites_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_favorites_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      user_ratings: {
+        Row: {
+          id: string
+          user_id: string
+          recipe_id: string
+          rating: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          recipe_id: string
+          rating: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          recipe_id?: string
+          rating?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_ratings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_ratings_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      toggle_favorite: {
+        Args: {
+          recipe_uuid: string
+        }
+        Returns: Json
+      }
+      set_recipe_rating: {
+        Args: {
+          recipe_uuid: string
+          rating_value: number
+        }
+        Returns: Json
+      }
+      remove_recipe_rating: {
+        Args: {
+          recipe_uuid: string
+        }
+        Returns: Json
+      }
+      get_user_recipe_preferences: {
+        Args: {
+          recipe_uuids: string[]
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

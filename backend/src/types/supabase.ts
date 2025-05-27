@@ -55,6 +55,54 @@ export interface Database {
         }
       }
 
+      user_favorites: {
+        Row: {
+          id: string
+          user_id: string
+          recipe_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          recipe_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          recipe_id?: string
+          created_at?: string
+        }
+      }
+
+      user_ratings: {
+        Row: {
+          id: string
+          user_id: string
+          recipe_id: string
+          rating: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          recipe_id: string
+          rating: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          recipe_id?: string
+          rating?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+
       // Include existing tables if needed
       pantry_ingredients: {
         Row: {
@@ -101,7 +149,31 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      toggle_favorite: {
+        Args: {
+          recipe_uuid: string
+        }
+        Returns: Json
+      }
+      set_recipe_rating: {
+        Args: {
+          recipe_uuid: string
+          rating_value: number
+        }
+        Returns: Json
+      }
+      remove_recipe_rating: {
+        Args: {
+          recipe_uuid: string
+        }
+        Returns: Json
+      }
+      get_user_recipe_preferences: {
+        Args: {
+          recipe_uuids: string[]
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
