@@ -19,7 +19,11 @@ export async function getCurrentUser(): Promise<User | null> {
 }
 
 export async function ensureUserSession(): Promise<Session | null> {
+  console.log('=== ENSURE USER SESSION START ===');
+  console.log('Getting current session...');
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+  console.log('Current session response:', { session, sessionError });
 
   if (sessionError) {
       console.error('Error getting session during ensureUserSession:', sessionError);
@@ -27,7 +31,11 @@ export async function ensureUserSession(): Promise<Session | null> {
   }
 
   if (session) {
-      console.log('Existing session found:', session);
+      console.log('Existing session found:', {
+        user_id: session.user.id,
+        is_anonymous: session.user.is_anonymous,
+        email: session.user.email
+      });
       return session;
   }
 
@@ -35,16 +43,27 @@ export async function ensureUserSession(): Promise<Session | null> {
   console.log('No active session, attempting anonymous sign-in...');
   const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously();
 
+  console.log('Anonymous sign-in response:', { anonData, anonError });
+
   if (anonError) {
-    console.error('Error signing in anonymously:', anonError);
+    console.error('Error signing in anonymously:', {
+      message: anonError.message,
+      status: anonError.status,
+      name: anonError.name
+    });
     // Handle error: show message to user, maybe disable save features
     return null;
   }
   if (anonData?.session) {
-    console.log('Anonymous session created:', anonData.session);
+    console.log('Anonymous session created:', {
+      user_id: anonData.session.user.id,
+      is_anonymous: anonData.session.user.is_anonymous,
+      email: anonData.session.user.email
+    });
   } else {
     console.warn('Anonymous sign-in did not return a session.');
   }
+  console.log('=== ENSURE USER SESSION END ===');
   return anonData?.session ?? null;
 }
 

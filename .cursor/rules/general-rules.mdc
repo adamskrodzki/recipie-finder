@@ -9,3 +9,5 @@ alwaysApply: true
 - for each new task create feature branch, make frequent commits.
 - dont be lazy, never ask me to run/test something you can do yourself with tool calling
 - use 'npm test' in root project directory to check if something is broken,'npm lint' for any linter issues, 'npm run dev' to run whole project
+
+- use 'npm run dev' in root folder to start both frontend and backend

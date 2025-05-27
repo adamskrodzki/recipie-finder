@@ -51,24 +51,42 @@ export const useRecipeStorage = (): UseRecipeStorageReturn => {
 
   // Toggle favorite status
   const toggleFavorite = useCallback(async (recipeId: string, recipe?: Recipe) => {
+    console.log('=== USERECIPESTORAGE TOGGLE FAVORITE START ===');
+    console.log('Recipe ID:', recipeId);
+    console.log('Recipe data:', recipe);
+    
     try {
+      console.log('Getting current favorites...');
       const currentFavorites = await recipeStorage.getFavorites();
+      console.log('Current favorites:', currentFavorites);
+      
       const isFav = currentFavorites.includes(recipeId);
+      console.log('Is currently favorite:', isFav);
       
       if (isFav) {
+        console.log('Removing from favorites...');
         await recipeStorage.removeFavorite(recipeId);
+        console.log('Removed from storage, updating local state...');
         setFavorites(prev => prev.filter(id => id !== recipeId));
+        console.log('Local favorites state updated');
       } else {
+        console.log('Adding to favorites...');
         // Save the recipe data if provided
         if (recipe) {
+          console.log('Saving recipe data first...');
           await recipeStorage.saveRecipe(recipe);
+          console.log('Recipe data saved');
         }
+        console.log('Adding to favorites in storage...');
         await recipeStorage.addFavorite(recipeId);
+        console.log('Added to storage, updating local state...');
         setFavorites(prev => [...prev, recipeId]);
+        console.log('Local favorites state updated');
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
     }
+    console.log('=== USERECIPESTORAGE TOGGLE FAVORITE END ===');
   }, []);
 
   // Set rating for a recipe

@@ -45,14 +45,8 @@ export const HomePage: React.FC = () => {
 
       const data = await response.json();
       
-      // Ensure unique IDs by adding timestamp to prevent conflicts between different requests
-      const timestamp = Date.now();
-      const recipesWithUniqueIds = data.recipes.map((recipe: Recipe, index: number) => ({
-        ...recipe,
-        id: `${recipe.id}-${timestamp}-${index}`
-      }));
-      
-      const enhancedRecipes = enhanceRecipes(recipesWithUniqueIds);
+      // Use the UUIDs returned from the backend (they're already unique and properly formatted)
+      const enhancedRecipes = enhanceRecipes(data.recipes);
       setRecipes(enhancedRecipes);
       
       // Save all recipes to storage for favorites functionality
@@ -125,17 +119,30 @@ export const HomePage: React.FC = () => {
   };
 
   const handleFavorite = async (recipeId: string) => {
+    console.log('=== HOMEPAGE HANDLE FAVORITE START ===');
+    console.log('Recipe ID:', recipeId);
     const recipe = recipes.find(r => r.id === recipeId);
-    await toggleFavorite(recipeId, recipe);
+    console.log('Found recipe:', recipe);
+    console.log('Current favorite status:', recipe?.isFavorite);
     
-    // Update local state
-    setRecipes(prevRecipes =>
-      prevRecipes.map(r =>
-        r.id === recipeId
-          ? { ...r, isFavorite: !r.isFavorite }
-          : r
-      )
-    );
+    try {
+      console.log('Calling toggleFavorite with:', { recipeId, recipe });
+      await toggleFavorite(recipeId, recipe);
+      console.log('toggleFavorite completed successfully');
+      
+      // Update local state
+      setRecipes(prevRecipes =>
+        prevRecipes.map(r =>
+          r.id === recipeId
+            ? { ...r, isFavorite: !r.isFavorite }
+            : r
+        )
+      );
+      console.log('Local state updated');
+    } catch (error) {
+      console.error('Error in handleFavorite:', error);
+    }
+    console.log('=== HOMEPAGE HANDLE FAVORITE END ===');
   };
 
   const handleRatingChange = async (recipeId: string, rating: number) => {

@@ -17,20 +17,61 @@ export const RecipeActions: React.FC<RecipeActionsProps> = ({
   rating = 0,
   isFavorite = false,
 }) => {
+  const handleFavoriteClick = () => {
+    console.log('=== RECIPE ACTIONS FAVORITE BUTTON CLICKED ===');
+    console.log('Current isFavorite:', isFavorite);
+    console.log('onFavorite callback:', onFavorite);
+    if (onFavorite) {
+      console.log('Calling onFavorite callback...');
+      onFavorite();
+      console.log('onFavorite callback called');
+    } else {
+      console.warn('No onFavorite callback provided');
+    }
+    console.log('=== RECIPE ACTIONS FAVORITE CLICK END ===');
+  };
+
+  const handleRefineClick = () => {
+    console.log('=== RECIPE ACTIONS REFINE BUTTON CLICKED ===');
+    console.log('onRefine callback:', onRefine);
+    if (onRefine) {
+      console.log('Calling onRefine callback...');
+      onRefine();
+      console.log('onRefine callback called');
+    } else {
+      console.warn('No onRefine callback provided');
+    }
+    console.log('=== RECIPE ACTIONS REFINE CLICK END ===');
+  };
+
+  const handleRatingChange = (newRating: number) => {
+    console.log('=== RECIPE ACTIONS RATING CHANGED ===');
+    console.log('New rating:', newRating);
+    console.log('onRatingChange callback:', onRatingChange);
+    if (onRatingChange) {
+      console.log('Calling onRatingChange callback...');
+      onRatingChange(newRating);
+      console.log('onRatingChange callback called');
+    } else {
+      console.warn('No onRatingChange callback provided');
+    }
+    console.log('=== RECIPE ACTIONS RATING CHANGE END ===');
+  };
+
   return (
     <div className="recipe-actions">
       <div className="recipe-actions__buttons">
         <Button
           variant="warning"
           size="small"
-          onClick={onRefine}
+          onClick={handleRefineClick}
         >
           Refine Recipe
         </Button>
         <Button
           variant="danger"
           size="small"
-          onClick={onFavorite}
+          onClick={handleFavoriteClick}
         >
           {isFavorite ? '♥' : '♡'} Favorite
         </Button>
@@ -40,7 +81,7 @@ export const RecipeActions: React.FC<RecipeActionsProps> = ({
         <span className="recipe-actions__rating-label">Rate:</span>
         <StarRating
           rating={rating}
-          onRatingChange={onRatingChange}
+          onRatingChange={handleRatingChange}
           size="small"
         />
       </div>
