@@ -21,6 +21,7 @@ export type UpdatePantryItemRequest =
 export interface UsePantryStorageReturn {
   items: PantryItem[];
   isLoading: boolean;
+  initialLoading: boolean;
   error: string | null;
   addItem: (item: CreatePantryItemRequest) => Promise<void>;
   updateItem: (id: string, updates: UpdatePantryItemRequest) => Promise<void>;
@@ -47,15 +48,17 @@ function getErrorMessage(error: unknown): string {
 export const usePantryStorage = (): UsePantryStorageReturn => {
   const { user, isLoading: authLoading, ensureSession } = useAuth();
   const [items, setItems] = useState<PantryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadPantryItems = useCallback(async (currentUserId: string) => {
+  const loadPantryItems = useCallback(async (currentUserId: string, isInitialLoad = false) => {
     if (!currentUserId) {
       setItems([]);
       return;
     }
-    setIsLoading(true);
+    if (isInitialLoad) {
+      setInitialLoading(true);
+    }
     setError(null);
     try {
       // pantryService.getPantryItems now returns PantryItemRich[]
@@ -73,13 +76,46 @@ export const usePantryStorage = (): UsePantryStorageReturn => {
       setError(getErrorMessage(err));
       setItems([]);
     } finally {
-      setIsLoading(false);
+      if (isInitialLoad) {
+        setInitialLoading(false);
+      }
     }
   }, []);
 
+  // Silent refetch for cache invalidation - doesn't trigger loading states
+  const silentRefetch = useCallback(async (currentUserId: string) => {
+    if (!currentUserId) {
+      setItems([]);
+      return;
+    }
+    try {
+      const fetchedItems = await pantryService.getPantryItems(currentUserId);
+      const processedItems = fetchedItems.map(item => ({
+        ...item,
+        added_at: item.added_at || new Date().toISOString(),
+      }));
+      setItems(processedItems);
+    } catch (err) {
+      console.error('Failed to silently refetch pantry items:', err);
+      // Don't update error state during silent refetch to avoid UI disruption
+    }
+  }, []);
+
+  // Subscribe to cache invalidation events
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const unsubscribe = pantryService.subscribeToCacheInvalidation(() => {
+      console.log('Cache invalidated, silently refetching pantry items for user:', user.id);
+      silentRefetch(user.id);
+    });
+
+    return unsubscribe;
+  }, [user?.id, silentRefetch]);
+
   useEffect(() => {
     if (!authLoading && user?.id) {
-      loadPantryItems(user.id);
+      loadPantryItems(user.id, true); // Mark as initial load
     } else if (!authLoading && !user) {
       setItems([]);
     }
@@ -103,30 +139,19 @@ export const usePantryStorage = (): UsePantryStorageReturn => {
       return;
     }
 
-    setIsLoading(true);
     setError(null);
     try {
       // pantryService.addPantryItem now takes { user_id, ingredient_name, ...other_fields }
       // and returns PantryItemRich or null
-      const newItem = await pantryService.addPantryItem({
+      await pantryService.addPantryItem({
           user_id: currentUserId, 
           ingredient_name: itemRequest.name,
           // Pass other fields from itemRequest if they exist e.g. quantity, unit
       });
-      if (newItem) {
-        // newItem is already PantryItemRich, which includes ingredient_name
-        // Ensure added_at is present for optimistic update, fallback if necessary
-        const itemToAdd: PantryItem = {
-            ...newItem,
-            added_at: newItem.added_at || new Date().toISOString(),
-        };
-        setItems(prevItems => [...prevItems, itemToAdd].sort((a, b) => new Date(b.added_at).getTime() - new Date(a.added_at).getTime()));
-      }
+      // Cache invalidation will trigger silent refetch automatically
     } catch (err) {
       console.error('Failed to add pantry item:', err);
       setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -153,29 +178,15 @@ export const usePantryStorage = (): UsePantryStorageReturn => {
         return;
     }
 
-    setIsLoading(true);
     setError(null);
     try {
       // pantryService.updatePantryItem now takes (id, updates) where updates can include ingredient_name
       // and returns PantryItemRich or null
-      const updatedItem = await pantryService.updatePantryItem(id, updates);
-      if (updatedItem) {
-        // updatedItem is already PantryItemRich
-        const itemToUpdate: PantryItem = {
-            ...updatedItem,
-            added_at: updatedItem.added_at || items.find(i => i.id === id)?.added_at || new Date().toISOString(),
-        };
-        setItems(prevItems =>
-          prevItems
-            .map(item => (item.id === id ? itemToUpdate : item))
-            .sort((a, b) => new Date(b.added_at).getTime() - new Date(a.added_at).getTime())
-        );
-      }
+      await pantryService.updatePantryItem(id, updates);
+      // Cache invalidation will trigger silent refetch automatically
     } catch (err) {
       console.error('Failed to update pantry item:', err);
       setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -187,16 +198,13 @@ export const usePantryStorage = (): UsePantryStorageReturn => {
       // Let's keep this check for consistency, though the service call would proceed.
       return;
     }
-    setIsLoading(true);
     setError(null);
     try {
       await pantryService.removePantryItem(id);
-      setItems(prevItems => prevItems.filter(item => item.id !== id));
+      // Cache invalidation will trigger silent refetch automatically
     } catch (err) {
       console.error('Failed to remove pantry item:', err);
       setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -208,7 +216,8 @@ export const usePantryStorage = (): UsePantryStorageReturn => {
 
   return {
     items,
-    isLoading: isLoading || authLoading, 
+    isLoading: false, // Operations don't set loading states anymore
+    initialLoading: initialLoading || authLoading,
     error,
     addItem: addItemHandler,
     updateItem: updateItemHandler,
