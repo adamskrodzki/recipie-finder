@@ -1,11 +1,11 @@
+import dotenv from 'dotenv'
+dotenv.config() // Must be called before any other imports that use environment variables
+
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
 import { OpenRouterService } from './openrouter'
 import { RecipeRequest, RecipeRefinementRequest } from './types'
 import { storeRecipe, updateRecipe, getRecipeById, searchRecipesByIngredients, getAllRecipes } from './services/recipeService'
-
-dotenv.config()
 const app = express()
 app.use(cors())
 app.use(express.json())
@@ -43,7 +43,7 @@ app.post('/api/recipes', async (req, res) => {
     // Generate recipes using OpenRouter LLM
     const recipes = await openRouterService.generateRecipes(validIngredients, mealType)
     
-    // Store each generated recipe in the database
+    // Store each generated recipe in the database and override their IDs with UUIDs
     const storedRecipes = await Promise.all(
       recipes.map(recipe => 
         storeRecipe(recipe, validIngredients, mealType)
@@ -56,7 +56,19 @@ app.post('/api/recipes', async (req, res) => {
 
     console.log(`Stored ${storedRecipes.filter(r => r !== null).length}/${recipes.length} recipes in database`);
     
-    res.json({ recipes })
+    // Override the recipe IDs with the database UUIDs for the response
+    const recipesWithDbIds = recipes.map((recipe, index) => {
+      const storedRecipe = storedRecipes[index];
+      if (storedRecipe) {
+        return {
+          ...recipe,
+          id: storedRecipe.id // Use the database UUID instead of OpenRouter's simple ID
+        };
+      }
+      return recipe; // Keep original if storage failed
+    });
+    
+    res.json({ recipes: recipesWithDbIds })
   } catch (error) {
     console.error('Error generating recipes:', error)
     

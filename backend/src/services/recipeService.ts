@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '../supabaseClient';
 import type { Database } from '../types/supabase';
 import type { Recipe } from '../types';
+import { randomUUID } from 'crypto';
 
 type RecipeRow = Database['public']['Tables']['recipes']['Row'];
 type RecipeInsert = Database['public']['Tables']['recipes']['Insert'];
@@ -22,9 +23,12 @@ export async function storeRecipe(
   console.log('Storing recipe:', recipe.title);
   
   try {
+    // Generate a new UUID for the database and override the recipe ID
+    const dbRecipeId = randomUUID();
+    
     // Prepare recipe data for insertion
     const recipeData: RecipeInsert = {
-      id: recipe.id,
+      id: dbRecipeId,
       title: recipe.title,
       ingredients: recipe.ingredients,
       steps: recipe.steps,
